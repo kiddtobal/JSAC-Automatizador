@@ -1,0 +1,107 @@
+@page "/clientes"
+@inject VidrieriaContext Context
+
+<PageTitle>Clientes</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h5">Clientes</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="MostrarFormulario">
+            Nuevo Cliente
+        </MudButton>
+    </MudStack>
+
+    @if (mostrarFormulario)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <MudForm @ref="form" Model="nuevoCliente" @onsubmit="GuardarCliente">
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Nombre"
+                                      Label="Nombre"
+                                      Required="true"
+                                      RequiredError="El nombre es obligatorio"
+                                      Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Telefono"
+                                      Label="Teléfono" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Email"
+                                      Label="Email" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudStack Row="true" Class="mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                        Guardar
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="CancelarFormulario">
+                        Cancelar
+                    </MudButton>
+                </MudStack>
+            </MudForm>
+        </MudPaper>
+    }
+
+    <MudTable Items="clientes" Dense="true" Hover="true" Striped="true" Loading="cargando">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Teléfono</MudTh>
+            <MudTh>Email</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Teléfono">@context.Telefono</MudTd>
+            <MudTd DataLabel="Email">@context.Email</MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<Cliente> clientes = new();
+    private Cliente nuevoCliente = new();
+    private MudForm? form;
+    private bool mostrarFormulario;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarClientes();
+    }
+
+    private async Task CargarClientes()
+    {
+        cargando = true;
+        clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+        cargando = false;
+    }
+
+    private void MostrarFormulario()
+    {
+        nuevoCliente = new Cliente();
+        mostrarFormulario = true;
+    }
+
+    private void CancelarFormulario()
+    {
+        mostrarFormulario = false;
+        nuevoCliente = new Cliente();
+    }
+
+    private async Task GuardarCliente()
+    {
+        if (string.IsNullOrWhiteSpace(nuevoCliente.Nombre))
+        {
+            return;
+        }
+
+        Context.Clientes.Add(nuevoCliente);
+        await Context.SaveChangesAsync();
+
+        mostrarFormulario = false;
+        nuevoCliente = new Cliente();
+        await CargarClientes();
+    }
+}

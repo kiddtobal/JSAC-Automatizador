@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="VidrieriaPresupuestos.Domain/VidrieriaPresupuestos.Domain.csproj" />
+  <Project Path="VidrieriaPresupuestos.Web/VidrieriaPresupuestos.Web.csproj" />
+</Solution>
