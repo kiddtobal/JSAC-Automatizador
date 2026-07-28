@@ -5,7 +5,7 @@
 
 <PageTitle>Nuevo Presupuesto</PageTitle>
 
-<MudPaper Class="pa-4">
+<MudPaper Class="pa-4 mb-4">
     <MudText Typo="Typo.h5" Class="mb-4">Nuevo Presupuesto</MudText>
 
     <MudGrid>
@@ -20,96 +20,205 @@
                               ResetValueOnEmptyText="true"
                               CoerceText="true" />
         </MudItem>
-        <MudItem xs="12" md="6">
+        <MudItem xs="12" md="3">
             <MudDatePicker Label="Fecha" @bind-Date="fecha" />
         </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="creadoPor" Label="Creado Por" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudTextField @bind-Value="descripcionTrabajo" Label="Descripción del Trabajo" Lines="4" Immediate="true" />
+        </MudItem>
     </MudGrid>
+</MudPaper>
 
-    <MudDivider Class="my-4" />
+<MudExpansionPanels MultiExpansion="true" Class="mb-4">
+    <MudExpansionPanel Text="@($"Materiales ({SubtotalMateriales:C})")" IsInitiallyExpanded="true">
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarMaterial">
+                Agregar Material
+            </MudButton>
+        </MudStack>
 
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-        <MudText Typo="Typo.h6">Ítems</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarItem">
-            Agregar Ítem
-        </MudButton>
-    </MudStack>
+        @foreach (var item in ItemsMateriales)
+        {
+            <MudPaper Outlined="true" Class="pa-3 mb-2">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudTextField @bind-Value="item.Descripcion" Label="Descripción" Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudTextField @bind-Value="item.Categoria" Label="Categoría" Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudSelect T="OrigenItem" @bind-Value="item.Origen" @bind-Value:after="() => OnOrigenChanged(item)" Label="Origen" Dense="true">
+                            <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
+                            <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="1">
+                        <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="1">
+                        <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F2" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudText Typo="Typo.body1">Valor Unitario: @item.ValorUnitario.ToString("C")</MudText>
+                        @if (item.Origen == OrigenItem.MaterialExterno && item.PorcentajeComision > 0)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Incluye @item.PorcentajeComision.ToString("0.##")% comisión</MudText>
+                        }
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudText Typo="Typo.h6">Total: @item.Total.ToString("C")</MudText>
+                    </MudItem>
+                    <MudItem xs="12" Class="d-flex justify-end">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+    </MudExpansionPanel>
 
-    <MudTable Items="items" Hover="true" Dense="true">
-        <HeaderContent>
-            <MudTh>Categoría</MudTh>
-            <MudTh>Descripción</MudTh>
-            <MudTh>Origen</MudTh>
-            <MudTh>Ancho (m)</MudTh>
-            <MudTh>Alto (m)</MudTh>
-            <MudTh>Precio Base</MudTh>
-            <MudTh>% Comisión</MudTh>
-            <MudTh>Precio Final</MudTh>
-            <MudTh>Cantidad</MudTh>
-            <MudTh>Subtotal</MudTh>
-            <MudTh></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Categoría">
-                <MudTextField @bind-Value="context.Categoria" Immediate="true" Placeholder="Ej: Float, Mano de obra..." />
-            </MudTd>
-            <MudTd DataLabel="Descripción">
-                <MudTextField @bind-Value="context.Descripcion" Immediate="true" />
-            </MudTd>
-            <MudTd DataLabel="Origen">
-                <MudSelect T="OrigenItem" @bind-Value="context.Origen" @bind-Value:after="() => OnOrigenChanged(context)" Dense="true">
-                    <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
-                    <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
-                </MudSelect>
-            </MudTd>
-            <MudTd DataLabel="Ancho (m)">
-                <MudNumericField T="decimal?" @bind-Value="context.AnchoM" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Format="F3" />
-            </MudTd>
-            <MudTd DataLabel="Alto (m)">
-                <MudNumericField T="decimal?" @bind-Value="context.AltoM" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Format="F3" />
-            </MudTd>
-            <MudTd DataLabel="Precio Base">
-                <MudNumericField T="decimal" @bind-Value="context.PrecioBase" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Format="F2" />
-            </MudTd>
-            <MudTd DataLabel="% Comisión">
-                <MudNumericField T="decimal" @bind-Value="context.PorcentajeComision" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Max="100" Format="F2" />
-            </MudTd>
-            <MudTd DataLabel="Precio Final">
-                <MudText Typo="Typo.body1">@context.PrecioFinal.ToString("C")</MudText>
-            </MudTd>
-            <MudTd DataLabel="Cantidad">
-                <MudNumericField T="int" @bind-Value="context.Cantidad" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="1" />
-            </MudTd>
-            <MudTd DataLabel="Subtotal">
-                <MudText Typo="Typo.body1">@context.Subtotal.ToString("C")</MudText>
-            </MudTd>
-            <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+    <MudExpansionPanel Text="@($"Mano de Obra ({SubtotalManoDeObra:C})")" IsInitiallyExpanded="true">
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarManoDeObra">
+                Agregar Mano de Obra
+            </MudButton>
+        </MudStack>
 
-    <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
-        <MudText Typo="Typo.h5">Total: @Total.ToString("C")</MudText>
-    </MudStack>
+        @foreach (var item in ItemsManoDeObra)
+        {
+            <MudPaper Outlined="true" Class="pa-3 mb-2">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudTextField @bind-Value="item.Descripcion" Label="Descripción" Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudTextField @bind-Value="item.Categoria" Label="Categoría" Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudSelect T="OrigenItem" @bind-Value="item.Origen" @bind-Value:after="() => OnOrigenChanged(item)" Label="Origen" Dense="true">
+                            <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
+                            <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="1">
+                        <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="1">
+                        <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F2" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudText Typo="Typo.body1">Valor Unitario: @item.ValorUnitario.ToString("C")</MudText>
+                        @if (item.Origen == OrigenItem.MaterialExterno && item.PorcentajeComision > 0)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Incluye @item.PorcentajeComision.ToString("0.##")% comisión</MudText>
+                        }
+                    </MudItem>
+                    <MudItem xs="6" sm="3" md="2">
+                        <MudText Typo="Typo.h6">Total: @item.Total.ToString("C")</MudText>
+                    </MudItem>
+                    <MudItem xs="12" Class="d-flex justify-end">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>
 
-    <MudStack Row="true" Class="mt-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="GuardarPresupuesto">
-            Guardar Presupuesto
-        </MudButton>
+<MudPaper Class="pa-4 mb-4" Elevation="1">
+    <MudStack Row="true" Justify="Justify.FlexEnd">
+        <MudText Typo="Typo.h5">Subtotal: @Subtotal.ToString("C")</MudText>
     </MudStack>
 </MudPaper>
+
+<MudExpansionPanels MultiExpansion="true" Class="mb-4">
+    <MudExpansionPanel Text="Cargos Adicionales" IsInitiallyExpanded="true">
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarCargo">
+                Agregar Cargo
+            </MudButton>
+        </MudStack>
+
+        <MudTable Items="cargos" Hover="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Nombre</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Valor</MudTh>
+                <MudTh>Monto Calculado</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nombre">
+                    <MudTextField @bind-Value="context.Nombre" Immediate="true" />
+                </MudTd>
+                <MudTd DataLabel="Tipo">
+                    <MudSelect T="TipoValorCargo" @bind-Value="context.TipoValor" @bind-Value:after="() => RecalcularCargo(context)" Dense="true">
+                        <MudSelectItem T="TipoValorCargo" Value="TipoValorCargo.Porcentaje">Porcentaje</MudSelectItem>
+                        <MudSelectItem T="TipoValorCargo" Value="TipoValorCargo.MontoFijo">Monto Fijo</MudSelectItem>
+                    </MudSelect>
+                </MudTd>
+                <MudTd DataLabel="Valor">
+                    <MudNumericField T="decimal" @bind-Value="context.Valor" @bind-Value:after="() => RecalcularCargo(context)" Immediate="true" Min="0" Format="F2" />
+                </MudTd>
+                <MudTd DataLabel="Monto Calculado">
+                    <MudText Typo="Typo.body1">@context.MontoCalculado.ToString("C")</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarCargo(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudStack Row="true" Justify="Justify.FlexEnd">
+        <MudText Typo="Typo.h4" Color="Color.Primary">Valor Neto: @ValorNeto.ToString("C")</MudText>
+    </MudStack>
+</MudPaper>
+
+<MudStack Row="true">
+    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" OnClick="GuardarPresupuesto">
+        Guardar Presupuesto
+    </MudButton>
+</MudStack>
 
 @code {
     private List<Cliente> clientes = new();
     private Cliente? clienteSeleccionado;
     private DateTime? fecha = DateTime.Today;
+    private string? creadoPor;
+    private string? descripcionTrabajo;
     private List<ItemPresupuesto> items = new();
+    private List<CargoAdicional> cargos = new();
 
-    private decimal Total => items.Sum(i => i.Subtotal);
+    private IEnumerable<ItemPresupuesto> ItemsMateriales => items.Where(i => i.Seccion == SeccionItem.Materiales);
+    private IEnumerable<ItemPresupuesto> ItemsManoDeObra => items.Where(i => i.Seccion == SeccionItem.ManoDeObra);
+
+    private decimal SubtotalMateriales => ItemsMateriales.Sum(i => i.Total);
+    private decimal SubtotalManoDeObra => ItemsManoDeObra.Sum(i => i.Total);
+    private decimal Subtotal => items.Sum(i => i.Total);
+    private decimal ValorNeto => Subtotal + cargos.Sum(c => c.MontoCalculado);
 
     protected override async Task OnInitializedAsync()
     {
         clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+        CrearCargosPorDefecto();
     }
 
     private Task<IEnumerable<Cliente>> BuscarClientes(string valor, CancellationToken token)
@@ -122,14 +231,42 @@
         return Task.FromResult(clientes.Where(c => c.Nombre.Contains(valor, StringComparison.OrdinalIgnoreCase)));
     }
 
-    private void AgregarItem()
+    private void CrearCargosPorDefecto()
     {
-        items.Add(new ItemPresupuesto { Origen = OrigenItem.Inventario, PorcentajeComision = 0, Cantidad = 1 });
+        cargos = new List<CargoAdicional>
+        {
+            new() { Nombre = "Utilidad", TipoValor = TipoValorCargo.Porcentaje, Valor = 20 },
+            new() { Nombre = "Gastos Generales", TipoValor = TipoValorCargo.Porcentaje, Valor = 10 }
+        };
+        RecalcularCargos();
+    }
+
+    private void AgregarMaterial()
+    {
+        items.Add(new ItemPresupuesto { Seccion = SeccionItem.Materiales, Origen = OrigenItem.Inventario, PorcentajeComision = 0, Cantidad = 1, Unidad = "u." });
+    }
+
+    private void AgregarManoDeObra()
+    {
+        items.Add(new ItemPresupuesto { Seccion = SeccionItem.ManoDeObra, Origen = OrigenItem.Inventario, PorcentajeComision = 0, Cantidad = 1, Unidad = "u." });
     }
 
     private void EliminarItem(ItemPresupuesto item)
     {
         items.Remove(item);
+        RecalcularCargos();
+    }
+
+    private void AgregarCargo()
+    {
+        var cargo = new CargoAdicional { TipoValor = TipoValorCargo.Porcentaje, Valor = 0 };
+        RecalcularCargo(cargo);
+        cargos.Add(cargo);
+    }
+
+    private void EliminarCargo(CargoAdicional cargo)
+    {
+        cargos.Remove(cargo);
     }
 
     private void OnOrigenChanged(ItemPresupuesto item)
@@ -140,10 +277,24 @@
 
     private void RecalcularItem(ItemPresupuesto item)
     {
-        item.PrecioFinal = item.PrecioBase * (1 + item.PorcentajeComision / 100);
+        item.ValorUnitario = item.PrecioBase * (1 + item.PorcentajeComision / 100);
+        item.Total = item.Cantidad * item.ValorUnitario;
+        RecalcularCargos();
+    }
 
-        decimal area = (item.AnchoM.HasValue && item.AltoM.HasValue) ? item.AnchoM.Value * item.AltoM.Value : 1m;
-        item.Subtotal = item.PrecioFinal * item.Cantidad * area;
+    private void RecalcularCargos()
+    {
+        foreach (var cargo in cargos)
+        {
+            RecalcularCargo(cargo);
+        }
+    }
+
+    private void RecalcularCargo(CargoAdicional cargo)
+    {
+        cargo.MontoCalculado = cargo.TipoValor == TipoValorCargo.Porcentaje
+            ? Subtotal * cargo.Valor / 100
+            : cargo.Valor;
     }
 
     private async Task GuardarPresupuesto()
@@ -154,37 +305,26 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(creadoPor))
+        {
+            Snackbar.Add("Debe indicar quién crea el presupuesto (Creado Por)", Severity.Error);
+            return;
+        }
+
         if (items.Count == 0)
         {
-            Snackbar.Add("Debe agregar al menos un ítem", Severity.Error);
+            Snackbar.Add("Debe agregar al menos un ítem (Materiales o Mano de Obra)", Severity.Error);
             return;
         }
 
         for (int i = 0; i < items.Count; i++)
         {
             var item = items[i];
+            var etiqueta = string.IsNullOrWhiteSpace(item.Descripcion) ? $"#{i + 1}" : item.Descripcion;
 
-            if (item.PrecioBase <= 0 || item.Cantidad <= 0)
+            if (item.Cantidad <= 0 || item.PrecioBase <= 0)
             {
-                Snackbar.Add($"El ítem #{i + 1} tiene valores inválidos: Precio Base y Cantidad deben ser mayores a 0", Severity.Error);
-                return;
-            }
-
-            if (item.PorcentajeComision < 0)
-            {
-                Snackbar.Add($"El ítem #{i + 1} tiene un % de comisión inválido", Severity.Error);
-                return;
-            }
-
-            if (item.AnchoM.HasValue != item.AltoM.HasValue)
-            {
-                Snackbar.Add($"El ítem #{i + 1} debe completar Ancho y Alto juntos, o dejar ambos vacíos", Severity.Error);
-                return;
-            }
-
-            if ((item.AnchoM.HasValue && item.AnchoM.Value <= 0) || (item.AltoM.HasValue && item.AltoM.Value <= 0))
-            {
-                Snackbar.Add($"El ítem #{i + 1} tiene Ancho o Alto inválidos: deben ser mayores a 0", Severity.Error);
+                Snackbar.Add($"El ítem '{etiqueta}' tiene valores inválidos: Cantidad y Precio Base deben ser mayores a 0", Severity.Error);
                 return;
             }
         }
@@ -195,8 +335,12 @@
             Cliente = clienteSeleccionado,
             Fecha = fecha ?? DateTime.Today,
             Estado = EstadoPresupuesto.Pendiente,
-            Total = Total,
-            Items = items
+            DescripcionTrabajo = descripcionTrabajo,
+            CreadoPor = creadoPor,
+            Subtotal = Subtotal,
+            ValorNeto = ValorNeto,
+            Items = items,
+            CargosAdicionales = cargos
         };
 
         Context.Presupuestos.Add(presupuesto);
@@ -206,6 +350,9 @@
 
         clienteSeleccionado = null;
         fecha = DateTime.Today;
+        creadoPor = null;
+        descripcionTrabajo = null;
         items = new();
+        CrearCargosPorDefecto();
     }
 }

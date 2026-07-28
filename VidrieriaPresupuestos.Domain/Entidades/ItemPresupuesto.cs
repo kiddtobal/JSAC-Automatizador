@@ -21,11 +21,12 @@ namespace VidrieriaPresupuestos.Domain.Entidades
         [Required]
         public OrigenItem Origen { get; set; }
 
-        [Range(0, 9999999.9999)]
-        public decimal? AnchoM { get; set; }
+        [Required]
+        public SeccionItem Seccion { get; set; }
 
-        [Range(0, 9999999.9999)]
-        public decimal? AltoM { get; set; }
+        [Required]
+        [StringLength(20)]
+        public string Unidad { get; set; } = null!;
 
         [Required]
         [Range(0, 9999999999.99)]
@@ -37,7 +38,7 @@ namespace VidrieriaPresupuestos.Domain.Entidades
 
         [Required]
         [Range(0, 9999999999.99)]
-        public decimal PrecioFinal { get; set; }
+        public decimal ValorUnitario { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]
@@ -45,6 +46,6 @@ namespace VidrieriaPresupuestos.Domain.Entidades
 
         [Required]
         [Range(0, 9999999999.99)]
-        public decimal Subtotal { get; set; }
+        public decimal Total { get; set; }
     }
 }

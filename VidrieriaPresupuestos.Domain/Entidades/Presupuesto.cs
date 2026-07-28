@@ -19,11 +19,23 @@ namespace VidrieriaPresupuestos.Domain.Entidades
         [Required]
         public EstadoPresupuesto Estado { get; set; }
 
+        public string? DescripcionTrabajo { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string CreadoPor { get; set; } = null!;
+
         [Required]
         [Range(0, 9999999999.99)]
-        public decimal Total { get; set; }
+        public decimal Subtotal { get; set; }
+
+        [Required]
+        [Range(0, 9999999999.99)]
+        public decimal ValorNeto { get; set; }
 
         public ICollection<ItemPresupuesto> Items { get; set; } = new List<ItemPresupuesto>();
+
+        public ICollection<CargoAdicional> CargosAdicionales { get; set; } = new List<CargoAdicional>();
     }
 
     public enum EstadoPresupuesto

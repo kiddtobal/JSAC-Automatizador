@@ -11,14 +11,46 @@ using VidrieriaPresupuestos.Web.Data;
 namespace VidrieriaPresupuestos.Web.Migrations
 {
     [DbContext(typeof(VidrieriaContext))]
-    [Migration("20260728053125_InicialCreacionEntidades")]
-    partial class InicialCreacionEntidades
+    [Migration("20260728232112_ModeloCompletoPresupuestos")]
+    partial class ModeloCompletoPresupuestos
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+
+            modelBuilder.Entity("VidrieriaPresupuestos.Domain.Entidades.CargoAdicional", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("MontoCalculado")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PresupuestoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TipoValor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PresupuestoId");
+
+                    b.ToTable("CargosAdicionales");
+                });
 
             modelBuilder.Entity("VidrieriaPresupuestos.Domain.Entidades.Cliente", b =>
                 {
@@ -50,36 +82,46 @@ namespace VidrieriaPresupuestos.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("AltoM")
-                        .HasPrecision(10, 4)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("AnchoM")
-                        .HasPrecision(10, 4)
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Cantidad")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("PrecioM2")
+                    b.Property<int>("Origen")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("PorcentajeComision")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PrecioBase")
                         .HasPrecision(10, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("PresupuestoId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("Subtotal")
+                    b.Property<int>("Seccion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Total")
                         .HasPrecision(10, 2)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TipoVidrio")
+                    b.Property<string>("Unidad")
                         .IsRequired()
-                        .HasMaxLength(50)
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ValorUnitario")
+                        .HasPrecision(10, 2)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -98,13 +140,25 @@ namespace VidrieriaPresupuestos.Web.Migrations
                     b.Property<int>("ClienteId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DescripcionTrabajo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Estado")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Total")
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ValorNeto")
                         .HasPrecision(10, 2)
                         .HasColumnType("TEXT");
 
@@ -113,6 +167,17 @@ namespace VidrieriaPresupuestos.Web.Migrations
                     b.HasIndex("ClienteId");
 
                     b.ToTable("Presupuestos");
+                });
+
+            modelBuilder.Entity("VidrieriaPresupuestos.Domain.Entidades.CargoAdicional", b =>
+                {
+                    b.HasOne("VidrieriaPresupuestos.Domain.Entidades.Presupuesto", "Presupuesto")
+                        .WithMany("CargosAdicionales")
+                        .HasForeignKey("PresupuestoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Presupuesto");
                 });
 
             modelBuilder.Entity("VidrieriaPresupuestos.Domain.Entidades.ItemPresupuesto", b =>
@@ -144,6 +209,8 @@ namespace VidrieriaPresupuestos.Web.Migrations
 
             modelBuilder.Entity("VidrieriaPresupuestos.Domain.Entidades.Presupuesto", b =>
                 {
+                    b.Navigation("CargosAdicionales");
+
                     b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
