@@ -11,7 +11,7 @@ using VidrieriaPresupuestos.Web.Data;
 namespace VidrieriaPresupuestos.Web.Migrations
 {
     [DbContext(typeof(VidrieriaContext))]
-    [Migration("20260728045832_InicialCreacionEntidades")]
+    [Migration("20260728053125_InicialCreacionEntidades")]
     partial class InicialCreacionEntidades
     {
         /// <inheritdoc />
