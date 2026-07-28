@@ -1,0 +1,211 @@
+@page "/presupuestos/nuevo"
+@rendermode InteractiveServer
+@inject VidrieriaContext Context
+@inject ISnackbar Snackbar
+
+<PageTitle>Nuevo Presupuesto</PageTitle>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5" Class="mb-4">Nuevo Presupuesto</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudAutocomplete T="Cliente"
+                              Label="Cliente"
+                              @bind-Value="clienteSeleccionado"
+                              SearchFunc="BuscarClientes"
+                              ToStringFunc="@(c => c?.Nombre)"
+                              Required="true"
+                              RequiredError="Debe seleccionar un cliente"
+                              ResetValueOnEmptyText="true"
+                              CoerceText="true" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudDatePicker Label="Fecha" @bind-Date="fecha" />
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-4" />
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <MudText Typo="Typo.h6">Ítems</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarItem">
+            Agregar Ítem
+        </MudButton>
+    </MudStack>
+
+    <MudTable Items="items" Hover="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Categoría</MudTh>
+            <MudTh>Descripción</MudTh>
+            <MudTh>Origen</MudTh>
+            <MudTh>Ancho (m)</MudTh>
+            <MudTh>Alto (m)</MudTh>
+            <MudTh>Precio Base</MudTh>
+            <MudTh>% Comisión</MudTh>
+            <MudTh>Precio Final</MudTh>
+            <MudTh>Cantidad</MudTh>
+            <MudTh>Subtotal</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Categoría">
+                <MudTextField @bind-Value="context.Categoria" Immediate="true" Placeholder="Ej: Float, Mano de obra..." />
+            </MudTd>
+            <MudTd DataLabel="Descripción">
+                <MudTextField @bind-Value="context.Descripcion" Immediate="true" />
+            </MudTd>
+            <MudTd DataLabel="Origen">
+                <MudSelect T="OrigenItem" @bind-Value="context.Origen" @bind-Value:after="() => OnOrigenChanged(context)" Dense="true">
+                    <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
+                    <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
+                </MudSelect>
+            </MudTd>
+            <MudTd DataLabel="Ancho (m)">
+                <MudNumericField T="decimal?" @bind-Value="context.AnchoM" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Format="F3" />
+            </MudTd>
+            <MudTd DataLabel="Alto (m)">
+                <MudNumericField T="decimal?" @bind-Value="context.AltoM" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Format="F3" />
+            </MudTd>
+            <MudTd DataLabel="Precio Base">
+                <MudNumericField T="decimal" @bind-Value="context.PrecioBase" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Format="F2" />
+            </MudTd>
+            <MudTd DataLabel="% Comisión">
+                <MudNumericField T="decimal" @bind-Value="context.PorcentajeComision" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="0" Max="100" Format="F2" />
+            </MudTd>
+            <MudTd DataLabel="Precio Final">
+                <MudText Typo="Typo.body1">@context.PrecioFinal.ToString("C")</MudText>
+            </MudTd>
+            <MudTd DataLabel="Cantidad">
+                <MudNumericField T="int" @bind-Value="context.Cantidad" @bind-Value:after="() => RecalcularItem(context)" Immediate="true" Min="1" />
+            </MudTd>
+            <MudTd DataLabel="Subtotal">
+                <MudText Typo="Typo.body1">@context.Subtotal.ToString("C")</MudText>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+        <MudText Typo="Typo.h5">Total: @Total.ToString("C")</MudText>
+    </MudStack>
+
+    <MudStack Row="true" Class="mt-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="GuardarPresupuesto">
+            Guardar Presupuesto
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private List<Cliente> clientes = new();
+    private Cliente? clienteSeleccionado;
+    private DateTime? fecha = DateTime.Today;
+    private List<ItemPresupuesto> items = new();
+
+    private decimal Total => items.Sum(i => i.Subtotal);
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+    }
+
+    private Task<IEnumerable<Cliente>> BuscarClientes(string valor, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            return Task.FromResult(clientes.AsEnumerable());
+        }
+
+        return Task.FromResult(clientes.Where(c => c.Nombre.Contains(valor, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void AgregarItem()
+    {
+        items.Add(new ItemPresupuesto { Origen = OrigenItem.Inventario, PorcentajeComision = 0, Cantidad = 1 });
+    }
+
+    private void EliminarItem(ItemPresupuesto item)
+    {
+        items.Remove(item);
+    }
+
+    private void OnOrigenChanged(ItemPresupuesto item)
+    {
+        item.PorcentajeComision = item.Origen == OrigenItem.MaterialExterno ? 20m : 0m;
+        RecalcularItem(item);
+    }
+
+    private void RecalcularItem(ItemPresupuesto item)
+    {
+        item.PrecioFinal = item.PrecioBase * (1 + item.PorcentajeComision / 100);
+
+        decimal area = (item.AnchoM.HasValue && item.AltoM.HasValue) ? item.AnchoM.Value * item.AltoM.Value : 1m;
+        item.Subtotal = item.PrecioFinal * item.Cantidad * area;
+    }
+
+    private async Task GuardarPresupuesto()
+    {
+        if (clienteSeleccionado is null)
+        {
+            Snackbar.Add("Debe seleccionar un cliente", Severity.Error);
+            return;
+        }
+
+        if (items.Count == 0)
+        {
+            Snackbar.Add("Debe agregar al menos un ítem", Severity.Error);
+            return;
+        }
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+
+            if (item.PrecioBase <= 0 || item.Cantidad <= 0)
+            {
+                Snackbar.Add($"El ítem #{i + 1} tiene valores inválidos: Precio Base y Cantidad deben ser mayores a 0", Severity.Error);
+                return;
+            }
+
+            if (item.PorcentajeComision < 0)
+            {
+                Snackbar.Add($"El ítem #{i + 1} tiene un % de comisión inválido", Severity.Error);
+                return;
+            }
+
+            if (item.AnchoM.HasValue != item.AltoM.HasValue)
+            {
+                Snackbar.Add($"El ítem #{i + 1} debe completar Ancho y Alto juntos, o dejar ambos vacíos", Severity.Error);
+                return;
+            }
+
+            if ((item.AnchoM.HasValue && item.AnchoM.Value <= 0) || (item.AltoM.HasValue && item.AltoM.Value <= 0))
+            {
+                Snackbar.Add($"El ítem #{i + 1} tiene Ancho o Alto inválidos: deben ser mayores a 0", Severity.Error);
+                return;
+            }
+        }
+
+        var presupuesto = new Presupuesto
+        {
+            ClienteId = clienteSeleccionado.Id,
+            Cliente = clienteSeleccionado,
+            Fecha = fecha ?? DateTime.Today,
+            Estado = EstadoPresupuesto.Pendiente,
+            Total = Total,
+            Items = items
+        };
+
+        Context.Presupuestos.Add(presupuesto);
+        await Context.SaveChangesAsync();
+
+        Snackbar.Add("Presupuesto guardado correctamente", Severity.Success);
+
+        clienteSeleccionado = null;
+        fecha = DateTime.Today;
+        items = new();
+    }
+}

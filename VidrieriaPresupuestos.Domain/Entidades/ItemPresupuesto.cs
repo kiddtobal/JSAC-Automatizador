@@ -15,21 +15,29 @@ namespace VidrieriaPresupuestos.Domain.Entidades
         [StringLength(250)]
         public string Descripcion { get; set; } = null!;
 
-        [Required]
         [StringLength(50)]
-        public string TipoVidrio { get; set; } = null!;
+        public string? Categoria { get; set; }
 
         [Required]
-        [Range(0, 9999999.9999)]
-        public decimal AnchoM { get; set; }
+        public OrigenItem Origen { get; set; }
 
-        [Required]
         [Range(0, 9999999.9999)]
-        public decimal AltoM { get; set; }
+        public decimal? AnchoM { get; set; }
+
+        [Range(0, 9999999.9999)]
+        public decimal? AltoM { get; set; }
 
         [Required]
         [Range(0, 9999999999.99)]
-        public decimal PrecioM2 { get; set; }
+        public decimal PrecioBase { get; set; }
+
+        [Required]
+        [Range(0, 100)]
+        public decimal PorcentajeComision { get; set; }
+
+        [Required]
+        [Range(0, 9999999999.99)]
+        public decimal PrecioFinal { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]

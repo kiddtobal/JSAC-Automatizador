@@ -42,7 +42,13 @@ namespace VidrieriaPresupuestos.Web.Data
                 entity.Property(i => i.AltoM)
                     .HasPrecision(10, 4);
 
-                entity.Property(i => i.PrecioM2)
+                entity.Property(i => i.PrecioBase)
+                    .HasPrecision(10, 2);
+
+                entity.Property(i => i.PorcentajeComision)
+                    .HasPrecision(10, 2);
+
+                entity.Property(i => i.PrecioFinal)
                     .HasPrecision(10, 2);
 
                 entity.Property(i => i.Subtotal)
