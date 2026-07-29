@@ -3,14 +3,13 @@
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
 
-<PageTitle>Nuevo Presupuesto</PageTitle>
+<PageTitle>Rimalto - Nuevo Presupuesto</PageTitle>
 
 <MudPaper Class="pa-4 mb-4">
     <MudText Typo="Typo.h5" Class="mb-4">Nuevo Presupuesto</MudText>
 
     <MudGrid>
         <MudItem xs="12" md="6">
-            <MudText Typo="Typo.caption">Clientes cargados: @clientes.Count</MudText>
             <MudTextField @bind-Value="busquedaCliente"
                           Label="Cliente"
                           Immediate="true"
@@ -19,7 +18,6 @@
                           RequiredError="Debe seleccionar un cliente"
                           Error="@clienteInvalidoAlGuardar"
                           ErrorText="Debe seleccionar un cliente de la lista" />
-                          <MudText Typo="Typo.caption">Debug: busqueda="@busquedaCliente" | filtrados=@clientesFiltrados.Count | seleccionado=@(clienteSeleccionado?.Nombre ?? "ninguno")</MudText>
             @if (!string.IsNullOrWhiteSpace(busquedaCliente) && clienteSeleccionado is null && clientesFiltrados.Count > 0)
             {
                 <MudPaper Outlined="true" Class="mt-1">
