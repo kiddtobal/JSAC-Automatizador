@@ -10,15 +10,29 @@
 
     <MudGrid>
         <MudItem xs="12" md="6">
-            <MudAutocomplete T="Cliente"
-                              Label="Cliente"
-                              @bind-Value="clienteSeleccionado"
-                              SearchFunc="BuscarClientes"
-                              ToStringFunc="@(c => c?.Nombre)"
-                              Required="true"
-                              RequiredError="Debe seleccionar un cliente"
-                              ResetValueOnEmptyText="true"
-                              CoerceText="true" />
+            <MudText Typo="Typo.caption">Clientes cargados: @clientes.Count</MudText>
+            <MudTextField @bind-Value="busquedaCliente"
+                          Label="Cliente"
+                          Immediate="true"
+                          @bind-Value:after="FiltrarClientes"
+                          Required="true"
+                          RequiredError="Debe seleccionar un cliente"
+                          Error="@clienteInvalidoAlGuardar"
+                          ErrorText="Debe seleccionar un cliente de la lista" />
+                          <MudText Typo="Typo.caption">Debug: busqueda="@busquedaCliente" | filtrados=@clientesFiltrados.Count | seleccionado=@(clienteSeleccionado?.Nombre ?? "ninguno")</MudText>
+            @if (!string.IsNullOrWhiteSpace(busquedaCliente) && clienteSeleccionado is null && clientesFiltrados.Count > 0)
+            {
+                <MudPaper Outlined="true" Class="mt-1">
+                    <MudList T="Cliente" Clickable="true">
+                        @foreach (var cliente in clientesFiltrados)
+                        {
+                            <MudListItem T="Cliente" Value="@cliente" OnClick="@(() => SeleccionarCliente(cliente))">
+                                @cliente.Nombre
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudPaper>
+            }
         </MudItem>
         <MudItem xs="12" md="3">
             <MudDatePicker Label="Fecha" @bind-Date="fecha" />
@@ -201,6 +215,9 @@
 @code {
     private List<Cliente> clientes = new();
     private Cliente? clienteSeleccionado;
+    private string? busquedaCliente;
+    private List<Cliente> clientesFiltrados = new();
+    private bool clienteInvalidoAlGuardar;
     private DateTime? fecha = DateTime.Today;
     private string? creadoPor;
     private string? descripcionTrabajo;
@@ -221,14 +238,28 @@
         CrearCargosPorDefecto();
     }
 
-    private Task<IEnumerable<Cliente>> BuscarClientes(string valor, CancellationToken token)
+    private void FiltrarClientes()
     {
-        if (string.IsNullOrWhiteSpace(valor))
+        if (clienteSeleccionado != null && busquedaCliente != clienteSeleccionado.Nombre)
         {
-            return Task.FromResult(clientes.AsEnumerable());
+            clienteSeleccionado = null;
         }
 
-        return Task.FromResult(clientes.Where(c => c.Nombre.Contains(valor, StringComparison.OrdinalIgnoreCase)));
+        clienteInvalidoAlGuardar = false;
+
+        clientesFiltrados = string.IsNullOrWhiteSpace(busquedaCliente)
+            ? new()
+            : clientes.Where(c => c.Nombre.Contains(busquedaCliente, StringComparison.OrdinalIgnoreCase))
+                      .Take(8)
+                      .ToList();
+    }
+
+    private void SeleccionarCliente(Cliente cliente)
+    {
+        clienteSeleccionado = cliente;
+        busquedaCliente = cliente.Nombre;
+        clientesFiltrados = new();
+        clienteInvalidoAlGuardar = false;
     }
 
     private void CrearCargosPorDefecto()
@@ -301,6 +332,7 @@
     {
         if (clienteSeleccionado is null)
         {
+            clienteInvalidoAlGuardar = true;
             Snackbar.Add("Debe seleccionar un cliente", Severity.Error);
             return;
         }
@@ -349,6 +381,9 @@
         Snackbar.Add("Presupuesto guardado correctamente", Severity.Success);
 
         clienteSeleccionado = null;
+        busquedaCliente = null;
+        clientesFiltrados = new();
+        clienteInvalidoAlGuardar = false;
         fecha = DateTime.Today;
         creadoPor = null;
         descripcionTrabajo = null;
