@@ -76,7 +76,7 @@
                                     <MudTextField @bind-Value="nuevoProductoUnidad" Label="Unidad (ej: u., m2, ml)" Immediate="true" Required="true" RequiredError="Obligatorio" />
                                 </MudItem>
                                 <MudItem xs="12" sm="6">
-                                    <MudNumericField T="decimal" @bind-Value="nuevoProductoPrecioBase" Label="Precio Base" Immediate="true" Min="0" Format="F2" />
+                                    <MudNumericField T="decimal" @bind-Value="nuevoProductoPrecioBase" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
                                 </MudItem>
                                 <MudItem xs="12" sm="6" Class="d-flex align-center">
                                     <MudCheckBox T="bool" @bind-Value="nuevoProductoExterno" Label="Externo (+20%)" />
@@ -140,7 +140,8 @@
     private bool nuevoProductoExterno;
     private string? nuevoProductoUrlReferencia;
 
-    private decimal NuevoProductoPrecioFinalPreview => nuevoProductoPrecioBase * (nuevoProductoExterno ? 1.20m : 1m);
+    private decimal NuevoProductoPrecioFinalPreview =>
+        Math.Round(nuevoProductoPrecioBase * (nuevoProductoExterno ? 1.20m : 1m), 0, MidpointRounding.AwayFromZero);
 
     protected override async Task OnInitializedAsync()
     {
@@ -248,7 +249,8 @@
         }
     }
 
-    private decimal PrecioFinal(ProductoCatalogo producto) => producto.PrecioBase * (1 + producto.PorcentajeComision / 100);
+    private decimal PrecioFinal(ProductoCatalogo producto) =>
+        Math.Round(producto.PrecioBase * (1 + producto.PorcentajeComision / 100), 0, MidpointRounding.AwayFromZero);
 
     private void MostrarFormProducto()
     {
@@ -290,7 +292,7 @@
             CategoriaId = categoriaSeleccionada.Id,
             Nombre = nuevoProductoNombre,
             Unidad = nuevoProductoUnidad,
-            PrecioBase = nuevoProductoPrecioBase,
+            PrecioBase = Math.Round(nuevoProductoPrecioBase, 0, MidpointRounding.AwayFromZero),
             Origen = nuevoProductoExterno ? OrigenItem.MaterialExterno : OrigenItem.Inventario,
             PorcentajeComision = nuevoProductoExterno ? 20 : 0,
             Activo = true,

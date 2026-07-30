@@ -75,7 +75,7 @@
                         <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
                     </MudItem>
                     <MudItem xs="6" sm="3" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F2" />
+                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
                     </MudItem>
                     <MudItem xs="6" sm="3" md="2">
                         <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
@@ -128,7 +128,7 @@
                         <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
                     </MudItem>
                     <MudItem xs="6" sm="3" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F2" />
+                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
                     </MudItem>
                     <MudItem xs="6" sm="3" md="2">
                         <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
@@ -185,7 +185,7 @@
                     </MudSelect>
                 </MudTd>
                 <MudTd DataLabel="Valor">
-                    <MudNumericField T="decimal" @bind-Value="context.Valor" @bind-Value:after="() => RecalcularCargo(context)" Immediate="true" Min="0" Format="F2" />
+                    <MudNumericField T="decimal" @bind-Value="context.Valor" @bind-Value:after="() => RecalcularCargo(context)" Immediate="true" Min="0" Format="F0" />
                 </MudTd>
                 <MudTd DataLabel="Monto Calculado">
                     <MudText Typo="Typo.body1">@context.MontoCalculado.ToString("C")</MudText>
@@ -306,7 +306,8 @@
 
     private void RecalcularItem(ItemPresupuesto item)
     {
-        item.ValorUnitario = item.PrecioBase * (1 + item.PorcentajeComision / 100);
+        item.PrecioBase = Math.Round(item.PrecioBase, 0, MidpointRounding.AwayFromZero);
+        item.ValorUnitario = Math.Round(item.PrecioBase * (1 + item.PorcentajeComision / 100), 0, MidpointRounding.AwayFromZero);
         item.Total = item.Cantidad * item.ValorUnitario;
         RecalcularCargos();
     }
@@ -321,8 +322,9 @@
 
     private void RecalcularCargo(CargoAdicional cargo)
     {
+        cargo.Valor = Math.Round(cargo.Valor, 0, MidpointRounding.AwayFromZero);
         cargo.MontoCalculado = cargo.TipoValor == TipoValorCargo.Porcentaje
-            ? Subtotal * cargo.Valor / 100
+            ? Math.Round(Subtotal * cargo.Valor / 100, 0, MidpointRounding.AwayFromZero)
             : cargo.Valor;
     }
 

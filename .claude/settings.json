@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck15\" -ErrorAction SilentlyContinue)",
+      "PowerShell(dotnet build C:\\\\Users\\\\Cris\\\\Desktop\\\\Rimalto\\\\VidrieriaPresupuestos.Web\\\\VidrieriaPresupuestos.Web.csproj -v quiet -p:UseAppHost=false --output \"$env:TEMP\\\\claude\\\\rimalto_buildcheck16\" 2>&1 | Select-String -Pattern \"error\")",
+      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck16\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}
