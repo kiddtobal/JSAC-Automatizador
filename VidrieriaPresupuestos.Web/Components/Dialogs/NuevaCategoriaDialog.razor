@@ -1,0 +1,28 @@
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="nombre" Label="Nombre" Required="true" RequiredError="El nombre es obligatorio" Immediate="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Confirmar">Guardar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private string? nombre;
+
+    private void Cancelar() => MudDialog.Cancel();
+
+    private void Confirmar()
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(nombre));
+    }
+}

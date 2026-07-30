@@ -15,9 +15,7 @@ namespace VidrieriaPresupuestos.Web.Data
         public DbSet<ItemPresupuesto> ItemsPresupuesto { get; set; } = null!;
         public DbSet<CargoAdicional> CargosAdicionales { get; set; } = null!;
         public DbSet<Categoria> Categorias { get; set; } = null!;
-        public DbSet<AtributoDefinicion> AtributosDefinicion { get; set; } = null!;
         public DbSet<ProductoCatalogo> ProductosCatalogo { get; set; } = null!;
-        public DbSet<ProductoAtributoValor> ProductoAtributoValores { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,14 +77,6 @@ namespace VidrieriaPresupuestos.Web.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            modelBuilder.Entity<AtributoDefinicion>(entity =>
-            {
-                entity.HasOne(a => a.Categoria)
-                    .WithMany()
-                    .HasForeignKey(a => a.CategoriaId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
-
             modelBuilder.Entity<ProductoCatalogo>(entity =>
             {
                 entity.HasOne(p => p.Categoria)
@@ -99,19 +89,6 @@ namespace VidrieriaPresupuestos.Web.Data
 
                 entity.Property(p => p.PorcentajeComision)
                     .HasPrecision(10, 2);
-            });
-
-            modelBuilder.Entity<ProductoAtributoValor>(entity =>
-            {
-                entity.HasOne(v => v.ProductoCatalogo)
-                    .WithMany(p => p.ValoresAtributos)
-                    .HasForeignKey(v => v.ProductoCatalogoId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(v => v.AtributoDefinicion)
-                    .WithMany()
-                    .HasForeignKey(v => v.AtributoDefinicionId)
-                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

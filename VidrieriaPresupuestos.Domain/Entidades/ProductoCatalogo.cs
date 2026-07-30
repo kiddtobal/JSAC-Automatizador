@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;
 
 namespace VidrieriaPresupuestos.Domain.Entidades
 {
@@ -33,6 +32,6 @@ namespace VidrieriaPresupuestos.Domain.Entidades
 
         public bool Activo { get; set; } = true;
 
-        public ICollection<ProductoAtributoValor> ValoresAtributos { get; set; } = new List<ProductoAtributoValor>();
+        public string? UrlReferencia { get; set; }
     }
 }

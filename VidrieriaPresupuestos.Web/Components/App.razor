@@ -19,10 +19,10 @@
 </head>
 
 <body>
-    <MudThemeProvider Theme="RimaltoTheme.Theme" />
-    <MudPopoverProvider />
-    <MudDialogProvider />
-    <MudSnackbarProvider />
+    <MudThemeProvider Theme="RimaltoTheme.Theme" @rendermode="InteractiveServer" />
+    <MudPopoverProvider @rendermode="InteractiveServer" />
+    <MudDialogProvider @rendermode="InteractiveServer" />
+    <MudSnackbarProvider @rendermode="InteractiveServer" />
     <Routes />
     <ReconnectModal />
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>

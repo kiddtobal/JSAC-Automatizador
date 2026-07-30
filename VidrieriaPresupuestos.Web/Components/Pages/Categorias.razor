@@ -1,0 +1,318 @@
+@page "/categorias"
+@rendermode InteractiveServer
+@inject VidrieriaContext Context
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Rimalto - Categorías</PageTitle>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h5">Categorías</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirDialogoNuevaCategoria(null))">
+            Nueva Categoría
+        </MudButton>
+    </MudStack>
+
+    <MudGrid>
+        <MudItem xs="12" md="5">
+            <MudPaper Outlined="true" Class="pa-2">
+                @if (cargando)
+                {
+                    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+                }
+                else if (arbolCategorias.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="pa-2">No hay categorías creadas todavía.</MudText>
+                }
+                else
+                {
+                    <MudTreeView T="Categoria" Items="arbolCategorias" @bind-SelectedValue="categoriaSeleccionada" @bind-SelectedValue:after="OnCategoriaSeleccionada" Hover="true">
+                        <ItemTemplate>
+                            <MudTreeViewItem T="Categoria" Value="@context.Value" Items="@context.Children" Text="@context.Text" />
+                        </ItemTemplate>
+                    </MudTreeView>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            @if (categoriaSeleccionada is null)
+            {
+                <MudText Typo="Typo.body1" Color="Color.Secondary">Seleccioná una categoría del árbol para ver su detalle.</MudText>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="pa-4">
+                    <MudTextField @bind-Value="nombreEdicion" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" />
+                    <MudStack Row="true" Class="mt-3">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarNombreCategoria">Guardar Cambios</MudButton>
+                        @if (categoriaSeleccionada.CategoriaPadreId is null)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirDialogoNuevaCategoria(categoriaSeleccionada.Id))">
+                                Nueva Subcategoría
+                            </MudButton>
+                        }
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="EliminarCategoria">Eliminar Categoría</MudButton>
+                    </MudStack>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                        <MudText Typo="Typo.h6">Productos de esta categoría</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="MostrarFormProducto">
+                            Agregar Producto
+                        </MudButton>
+                    </MudStack>
+
+                    @if (mostrarFormProducto)
+                    {
+                        <MudPaper Outlined="true" Class="pa-3 mb-3">
+                            <MudGrid>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="nuevoProductoNombre" Label="Nombre" Immediate="true" Required="true" RequiredError="Obligatorio" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="nuevoProductoUnidad" Label="Unidad (ej: u., m2, ml)" Immediate="true" Required="true" RequiredError="Obligatorio" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudNumericField T="decimal" @bind-Value="nuevoProductoPrecioBase" Label="Precio Base" Immediate="true" Min="0" Format="F2" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6" Class="d-flex align-center">
+                                    <MudCheckBox T="bool" @bind-Value="nuevoProductoExterno" Label="Externo (+20%)" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="nuevoProductoUrlReferencia" Label="URL de Referencia (opcional)" Immediate="true" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.body1">Precio Final: @NuevoProductoPrecioFinalPreview.ToString("C")</MudText>
+                                </MudItem>
+                            </MudGrid>
+                            <MudStack Row="true" Class="mt-3">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarProducto">Guardar</MudButton>
+                                <MudButton Variant="Variant.Outlined" OnClick="CancelarFormProducto">Cancelar</MudButton>
+                            </MudStack>
+                        </MudPaper>
+                    }
+
+                    @if (productosCategoria.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Esta categoría no tiene productos cargados.</MudText>
+                    }
+                    else
+                    {
+                        <MudList T="ProductoCatalogo">
+                            @foreach (var producto in productosCategoria)
+                            {
+                                <MudListItem T="ProductoCatalogo">
+                                    <div class="d-flex justify-space-between align-center" style="width:100%">
+                                        <span>
+                                            @producto.Nombre
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:inline-block; margin-left:4px;">
+                                                (Base: @producto.PrecioBase.ToString("C")@(producto.Origen == OrigenItem.MaterialExterno ? " · Externo" : "") · Final: @PrecioFinal(producto).ToString("C"))
+                                            </MudText>
+                                        </span>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminarProducto(producto))" />
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+    private List<Categoria> categorias = new();
+    private List<TreeItemData<Categoria>> arbolCategorias = new();
+    private bool cargando = true;
+
+    private Categoria? categoriaSeleccionada;
+    private string? nombreEdicion;
+
+    private List<ProductoCatalogo> productosCategoria = new();
+    private bool mostrarFormProducto;
+    private string? nuevoProductoNombre;
+    private string? nuevoProductoUnidad;
+    private decimal nuevoProductoPrecioBase;
+    private bool nuevoProductoExterno;
+    private string? nuevoProductoUrlReferencia;
+
+    private decimal NuevoProductoPrecioFinalPreview => nuevoProductoPrecioBase * (nuevoProductoExterno ? 1.20m : 1m);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCategorias();
+    }
+
+    private async Task CargarCategorias()
+    {
+        cargando = true;
+        categorias = await Context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
+        arbolCategorias = ConstruirArbol();
+        cargando = false;
+    }
+
+    private List<TreeItemData<Categoria>> ConstruirArbol() =>
+        categorias.Where(c => c.CategoriaPadreId is null)
+                  .OrderBy(c => c.Nombre)
+                  .Select(ConstruirNodo)
+                  .ToList();
+
+    private TreeItemData<Categoria> ConstruirNodo(Categoria categoria)
+    {
+        var hijos = categorias.Where(c => c.CategoriaPadreId == categoria.Id)
+                               .OrderBy(c => c.Nombre)
+                               .Select(ConstruirNodo)
+                               .ToList();
+
+        return new TreeItemData<Categoria>
+        {
+            Value = categoria,
+            Text = categoria.Nombre,
+            Expandable = hijos.Count > 0,
+            Children = hijos.Count > 0 ? hijos : null
+        };
+    }
+
+    private async Task AbrirDialogoNuevaCategoria(int? categoriaPadreId)
+    {
+        var titulo = categoriaPadreId is null ? "Nueva Categoría" : "Nueva Subcategoría";
+        var dialog = await DialogService.ShowAsync<NuevaCategoriaDialog>(titulo);
+        var resultado = await dialog.Result;
+
+        if (resultado is not null && !resultado.Canceled && resultado.Data is string nombre && !string.IsNullOrWhiteSpace(nombre))
+        {
+            Context.Categorias.Add(new Categoria { Nombre = nombre, CategoriaPadreId = categoriaPadreId });
+            await Context.SaveChangesAsync();
+
+            Snackbar.Add(categoriaPadreId is null ? "Categoría creada" : "Subcategoría creada", Severity.Success);
+            await CargarCategorias();
+        }
+    }
+
+    private async Task OnCategoriaSeleccionada()
+    {
+        nombreEdicion = categoriaSeleccionada?.Nombre;
+        mostrarFormProducto = false;
+        productosCategoria = new();
+
+        if (categoriaSeleccionada is not null)
+        {
+            productosCategoria = await Context.ProductosCatalogo
+                .Where(p => p.CategoriaId == categoriaSeleccionada.Id)
+                .OrderBy(p => p.Nombre)
+                .ToListAsync();
+        }
+    }
+
+    private async Task GuardarNombreCategoria()
+    {
+        if (categoriaSeleccionada is null || string.IsNullOrWhiteSpace(nombreEdicion))
+        {
+            Snackbar.Add("El nombre no puede estar vacío", Severity.Error);
+            return;
+        }
+
+        categoriaSeleccionada.Nombre = nombreEdicion;
+        await Context.SaveChangesAsync();
+        arbolCategorias = ConstruirArbol();
+
+        Snackbar.Add("Categoría actualizada", Severity.Success);
+    }
+
+    private async Task EliminarCategoria()
+    {
+        if (categoriaSeleccionada is null)
+        {
+            return;
+        }
+
+        try
+        {
+            Context.Categorias.Remove(categoriaSeleccionada);
+            await Context.SaveChangesAsync();
+
+            Snackbar.Add("Categoría eliminada", Severity.Success);
+            categoriaSeleccionada = null;
+            nombreEdicion = null;
+            productosCategoria = new();
+            await CargarCategorias();
+        }
+        catch (DbUpdateException)
+        {
+            Context.Entry(categoriaSeleccionada).State = EntityState.Unchanged;
+            Snackbar.Add("No se puede eliminar: la categoría tiene subcategorías o productos asociados.", Severity.Error);
+        }
+    }
+
+    private decimal PrecioFinal(ProductoCatalogo producto) => producto.PrecioBase * (1 + producto.PorcentajeComision / 100);
+
+    private void MostrarFormProducto()
+    {
+        nuevoProductoNombre = null;
+        nuevoProductoUnidad = null;
+        nuevoProductoPrecioBase = 0;
+        nuevoProductoExterno = false;
+        nuevoProductoUrlReferencia = null;
+        mostrarFormProducto = true;
+    }
+
+    private void CancelarFormProducto()
+    {
+        mostrarFormProducto = false;
+    }
+
+    private async Task GuardarProducto()
+    {
+        if (categoriaSeleccionada is null || string.IsNullOrWhiteSpace(nuevoProductoNombre) || string.IsNullOrWhiteSpace(nuevoProductoUnidad))
+        {
+            Snackbar.Add("Nombre y Unidad son obligatorios", Severity.Error);
+            return;
+        }
+
+        if (nuevoProductoPrecioBase <= 0)
+        {
+            Snackbar.Add("El Precio Base debe ser mayor a 0", Severity.Error);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(nuevoProductoUrlReferencia) && !Uri.TryCreate(nuevoProductoUrlReferencia, UriKind.Absolute, out _))
+        {
+            Snackbar.Add("La URL de referencia no tiene un formato válido", Severity.Error);
+            return;
+        }
+
+        var producto = new ProductoCatalogo
+        {
+            CategoriaId = categoriaSeleccionada.Id,
+            Nombre = nuevoProductoNombre,
+            Unidad = nuevoProductoUnidad,
+            PrecioBase = nuevoProductoPrecioBase,
+            Origen = nuevoProductoExterno ? OrigenItem.MaterialExterno : OrigenItem.Inventario,
+            PorcentajeComision = nuevoProductoExterno ? 20 : 0,
+            Activo = true,
+            UrlReferencia = string.IsNullOrWhiteSpace(nuevoProductoUrlReferencia) ? null : nuevoProductoUrlReferencia
+        };
+
+        Context.ProductosCatalogo.Add(producto);
+        await Context.SaveChangesAsync();
+
+        productosCategoria.Add(producto);
+        productosCategoria = productosCategoria.OrderBy(p => p.Nombre).ToList();
+        mostrarFormProducto = false;
+
+        Snackbar.Add("Producto agregado", Severity.Success);
+    }
+
+    private async Task EliminarProducto(ProductoCatalogo producto)
+    {
+        Context.ProductosCatalogo.Remove(producto);
+        await Context.SaveChangesAsync();
+
+        productosCategoria.Remove(producto);
+        Snackbar.Add("Producto eliminado", Severity.Success);
+    }
+}
