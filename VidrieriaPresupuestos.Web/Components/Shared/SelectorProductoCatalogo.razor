@@ -1,0 +1,82 @@
+<MudList T="object" Clickable="true" Dense="true">
+    @foreach (var raiz in categoriasPorPadre[null].OrderBy(c => c.Nombre))
+    {
+        <MudListItem T="object" OnClick="@(() => AlternarExpandida(raiz.Id))"
+                     Icon="@(EstaExpandida(raiz.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+            @raiz.Nombre
+        </MudListItem>
+
+        @if (EstaExpandida(raiz.Id))
+        {
+            @foreach (var sub in categoriasPorPadre[raiz.Id].OrderBy(c => c.Nombre))
+            {
+                <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarExpandida(sub.Id))"
+                             Icon="@(EstaExpandida(sub.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                    @sub.Nombre
+                </MudListItem>
+
+                @if (EstaExpandida(sub.Id))
+                {
+                    @foreach (var prod in productosPorCategoria[sub.Id].OrderBy(p => p.Nombre))
+                    {
+                        <MudListItem T="object" Class="ml-10"
+                                     Style="@(prod == ProductoSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
+                                     OnClick="@(() => SeleccionarProducto(prod))">
+                            @prod.Nombre
+                        </MudListItem>
+                    }
+                }
+            }
+
+            @foreach (var prod in productosPorCategoria[raiz.Id].OrderBy(p => p.Nombre))
+            {
+                <MudListItem T="object" Class="ml-6"
+                             Style="@(prod == ProductoSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
+                             OnClick="@(() => SeleccionarProducto(prod))">
+                    @prod.Nombre
+                </MudListItem>
+            }
+        }
+    }
+</MudList>
+
+@code {
+    [Parameter]
+    public List<Categoria> Categorias { get; set; } = new();
+
+    [Parameter]
+    public List<ProductoCatalogo> Productos { get; set; } = new();
+
+    [Parameter]
+    public ProductoCatalogo? ProductoSeleccionado { get; set; }
+
+    [Parameter]
+    public EventCallback<ProductoCatalogo?> ProductoSeleccionadoChanged { get; set; }
+
+    private HashSet<int> categoriasExpandidas = new();
+
+    private ILookup<int?, Categoria> categoriasPorPadre = Enumerable.Empty<Categoria>().ToLookup(c => c.CategoriaPadreId);
+    private ILookup<int, ProductoCatalogo> productosPorCategoria = Enumerable.Empty<ProductoCatalogo>().ToLookup(p => p.CategoriaId);
+
+    protected override void OnParametersSet()
+    {
+        categoriasPorPadre = Categorias.ToLookup(c => c.CategoriaPadreId);
+        productosPorCategoria = Productos.ToLookup(p => p.CategoriaId);
+    }
+
+    private bool EstaExpandida(int categoriaId) => categoriasExpandidas.Contains(categoriaId);
+
+    private void AlternarExpandida(int categoriaId)
+    {
+        if (!categoriasExpandidas.Add(categoriaId))
+        {
+            categoriasExpandidas.Remove(categoriaId);
+        }
+    }
+
+    private async Task SeleccionarProducto(ProductoCatalogo producto)
+    {
+        ProductoSeleccionado = producto;
+        await ProductoSeleccionadoChanged.InvokeAsync(producto);
+    }
+}

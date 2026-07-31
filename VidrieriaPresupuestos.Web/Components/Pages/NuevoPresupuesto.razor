@@ -46,108 +46,162 @@
 
 <MudExpansionPanels MultiExpansion="true" Class="mb-4">
     <MudExpansionPanel Text="@($"Materiales ({SubtotalMateriales:C})")" IsInitiallyExpanded="true">
-        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarMaterial">
-                Agregar Material
+        <MudPaper Outlined="true" Class="pa-2 mb-3">
+            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-ProductoSeleccionado="productoSeleccionadoMaterial" />
+        </MudPaper>
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(productoSeleccionadoMaterial is null)" OnClick="AgregarMaterialDesdeProducto">
+                Agregar
             </MudButton>
         </MudStack>
 
         @foreach (var item in ItemsMateriales)
         {
-            <MudPaper Outlined="true" Class="pa-3 mb-2">
-                <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudTextField @bind-Value="item.Descripcion" Label="Descripción" Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudTextField @bind-Value="item.Categoria" Label="Categoría" Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudSelect T="OrigenItem" @bind-Value="item.Origen" @bind-Value:after="() => OnOrigenChanged(item)" Label="Origen" Dense="true">
-                            <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
-                            <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="1">
-                        <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="1">
-                        <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudText Typo="Typo.body1">Valor Unitario: @item.ValorUnitario.ToString("C")</MudText>
-                        @if (item.Origen == OrigenItem.MaterialExterno && item.PorcentajeComision > 0)
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Incluye @item.PorcentajeComision.ToString("0.##")% comisión</MudText>
-                        }
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudText Typo="Typo.h6">Total: @item.Total.ToString("C")</MudText>
-                    </MudItem>
-                    <MudItem xs="12" Class="d-flex justify-end">
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
-                    </MudItem>
-                </MudGrid>
-            </MudPaper>
+            @if (EstaExpandido(item))
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudTextField @bind-Value="item.Descripcion" Label="Descripción" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudTextField @bind-Value="item.Categoria" Label="Categoría" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudSelect T="OrigenItem" @bind-Value="item.Origen" @bind-Value:after="() => OnOrigenChanged(item)" Label="Origen" Dense="true">
+                                <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
+                                <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="1">
+                            <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="1">
+                            <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudTextField @bind-Value="item.UrlReferencia" Label="URL de Referencia (opcional)" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudText Typo="Typo.body1">Valor Unitario: @item.ValorUnitario.ToString("C")</MudText>
+                            @if (item.Origen == OrigenItem.MaterialExterno && item.PorcentajeComision > 0)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Incluye @item.PorcentajeComision.ToString("0.##")% comisión</MudText>
+                            }
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudText Typo="Typo.h6">Total: @item.Total.ToString("C")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" Class="d-flex justify-end gap-2">
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => AlternarExpandido(item))">Listo</MudButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.body1">@item.Descripcion</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.h6">@item.Total.ToString("C")</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => AlternarExpandido(item))" />
+                            @if (!string.IsNullOrWhiteSpace(item.UrlReferencia))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Link" Href="@item.UrlReferencia" Target="_blank" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
         }
     </MudExpansionPanel>
 
     <MudExpansionPanel Text="@($"Mano de Obra ({SubtotalManoDeObra:C})")" IsInitiallyExpanded="true">
-        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarManoDeObra">
-                Agregar Mano de Obra
+        <MudPaper Outlined="true" Class="pa-2 mb-3">
+            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-ProductoSeleccionado="productoSeleccionadoManoDeObra" />
+        </MudPaper>
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(productoSeleccionadoManoDeObra is null)" OnClick="AgregarManoDeObraDesdeProducto">
+                Agregar
             </MudButton>
         </MudStack>
 
         @foreach (var item in ItemsManoDeObra)
         {
-            <MudPaper Outlined="true" Class="pa-3 mb-2">
-                <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudTextField @bind-Value="item.Descripcion" Label="Descripción" Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudTextField @bind-Value="item.Categoria" Label="Categoría" Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudSelect T="OrigenItem" @bind-Value="item.Origen" @bind-Value:after="() => OnOrigenChanged(item)" Label="Origen" Dense="true">
-                            <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
-                            <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="1">
-                        <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="1">
-                        <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudText Typo="Typo.body1">Valor Unitario: @item.ValorUnitario.ToString("C")</MudText>
-                        @if (item.Origen == OrigenItem.MaterialExterno && item.PorcentajeComision > 0)
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Incluye @item.PorcentajeComision.ToString("0.##")% comisión</MudText>
-                        }
-                    </MudItem>
-                    <MudItem xs="6" sm="3" md="2">
-                        <MudText Typo="Typo.h6">Total: @item.Total.ToString("C")</MudText>
-                    </MudItem>
-                    <MudItem xs="12" Class="d-flex justify-end">
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
-                    </MudItem>
-                </MudGrid>
-            </MudPaper>
+            @if (EstaExpandido(item))
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudTextField @bind-Value="item.Descripcion" Label="Descripción" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudTextField @bind-Value="item.Categoria" Label="Categoría" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudSelect T="OrigenItem" @bind-Value="item.Origen" @bind-Value:after="() => OnOrigenChanged(item)" Label="Origen" Dense="true">
+                                <MudSelectItem T="OrigenItem" Value="OrigenItem.Inventario">Inventario</MudSelectItem>
+                                <MudSelectItem T="OrigenItem" Value="OrigenItem.MaterialExterno">Material Externo</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="1">
+                            <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="1">
+                            <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudNumericField T="decimal" @bind-Value="item.PorcentajeComision" @bind-Value:after="() => RecalcularItem(item)" Label="% Comisión" Immediate="true" Min="0" Max="100" Format="F2" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudTextField @bind-Value="item.UrlReferencia" Label="URL de Referencia (opcional)" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudText Typo="Typo.body1">Valor Unitario: @item.ValorUnitario.ToString("C")</MudText>
+                            @if (item.Origen == OrigenItem.MaterialExterno && item.PorcentajeComision > 0)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Incluye @item.PorcentajeComision.ToString("0.##")% comisión</MudText>
+                            }
+                        </MudItem>
+                        <MudItem xs="6" sm="3" md="2">
+                            <MudText Typo="Typo.h6">Total: @item.Total.ToString("C")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" Class="d-flex justify-end gap-2">
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => AlternarExpandido(item))">Listo</MudButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.body1">@item.Descripcion</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.h6">@item.Total.ToString("C")</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => AlternarExpandido(item))" />
+                            @if (!string.IsNullOrWhiteSpace(item.UrlReferencia))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Link" Href="@item.UrlReferencia" Target="_blank" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarItem(item))" />
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
         }
     </MudExpansionPanel>
 </MudExpansionPanels>
@@ -221,6 +275,13 @@
     private string? descripcionTrabajo;
     private List<ItemPresupuesto> items = new();
     private List<CargoAdicional> cargos = new();
+    private HashSet<ItemPresupuesto> itemsExpandido = new();
+
+    private List<Categoria> categoriasOrdenadas = new();
+    private List<ProductoCatalogo> productos = new();
+
+    private ProductoCatalogo? productoSeleccionadoMaterial;
+    private ProductoCatalogo? productoSeleccionadoManoDeObra;
 
     private IEnumerable<ItemPresupuesto> ItemsMateriales => items.Where(i => i.Seccion == SeccionItem.Materiales);
     private IEnumerable<ItemPresupuesto> ItemsManoDeObra => items.Where(i => i.Seccion == SeccionItem.ManoDeObra);
@@ -233,7 +294,29 @@
     protected override async Task OnInitializedAsync()
     {
         clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+
+        var todasCategorias = await Context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
+        categoriasOrdenadas = OrdenarCategoriasJerarquico(todasCategorias);
+
+        productos = await Context.ProductosCatalogo.Include(p => p.Categoria).OrderBy(p => p.Nombre).ToListAsync();
+
         CrearCargosPorDefecto();
+    }
+
+    private List<Categoria> OrdenarCategoriasJerarquico(List<Categoria> todas) =>
+        todas.Where(c => c.CategoriaPadreId is null)
+             .OrderBy(c => c.Nombre)
+             .SelectMany(raiz => new[] { raiz }.Concat(todas.Where(c => c.CategoriaPadreId == raiz.Id).OrderBy(c => c.Nombre)))
+             .ToList();
+
+    private bool EstaExpandido(ItemPresupuesto item) => itemsExpandido.Contains(item);
+
+    private void AlternarExpandido(ItemPresupuesto item)
+    {
+        if (!itemsExpandido.Add(item))
+        {
+            itemsExpandido.Remove(item);
+        }
     }
 
     private void FiltrarClientes()
@@ -270,19 +353,66 @@
         RecalcularCargos();
     }
 
-    private void AgregarMaterial()
+    private void AgregarMaterialDesdeProducto()
     {
-        items.Add(new ItemPresupuesto { Seccion = SeccionItem.Materiales, Origen = OrigenItem.Inventario, PorcentajeComision = 0, Cantidad = 1, Unidad = "u." });
+        if (productoSeleccionadoMaterial is null)
+        {
+            Snackbar.Add("Elegí un producto", Severity.Error);
+            return;
+        }
+
+        var item = new ItemPresupuesto
+        {
+            Seccion = SeccionItem.Materiales,
+            Descripcion = productoSeleccionadoMaterial.Nombre,
+            Categoria = productoSeleccionadoMaterial.Categoria.Nombre,
+            Unidad = productoSeleccionadoMaterial.Unidad,
+            Origen = productoSeleccionadoMaterial.Origen,
+            PrecioBase = productoSeleccionadoMaterial.PrecioBase,
+            PorcentajeComision = productoSeleccionadoMaterial.PorcentajeComision,
+            UrlReferencia = productoSeleccionadoMaterial.UrlReferencia,
+            Cantidad = 1
+        };
+
+        items.Add(item);
+        RecalcularItem(item);
+        itemsExpandido.Add(item);
+
+        productoSeleccionadoMaterial = null;
     }
 
-    private void AgregarManoDeObra()
+    private void AgregarManoDeObraDesdeProducto()
     {
-        items.Add(new ItemPresupuesto { Seccion = SeccionItem.ManoDeObra, Origen = OrigenItem.Inventario, PorcentajeComision = 0, Cantidad = 1, Unidad = "u." });
+        if (productoSeleccionadoManoDeObra is null)
+        {
+            Snackbar.Add("Elegí un producto", Severity.Error);
+            return;
+        }
+
+        var item = new ItemPresupuesto
+        {
+            Seccion = SeccionItem.ManoDeObra,
+            Descripcion = productoSeleccionadoManoDeObra.Nombre,
+            Categoria = productoSeleccionadoManoDeObra.Categoria.Nombre,
+            Unidad = productoSeleccionadoManoDeObra.Unidad,
+            Origen = productoSeleccionadoManoDeObra.Origen,
+            PrecioBase = productoSeleccionadoManoDeObra.PrecioBase,
+            PorcentajeComision = productoSeleccionadoManoDeObra.PorcentajeComision,
+            UrlReferencia = productoSeleccionadoManoDeObra.UrlReferencia,
+            Cantidad = 1
+        };
+
+        items.Add(item);
+        RecalcularItem(item);
+        itemsExpandido.Add(item);
+
+        productoSeleccionadoManoDeObra = null;
     }
 
     private void EliminarItem(ItemPresupuesto item)
     {
         items.Remove(item);
+        itemsExpandido.Remove(item);
         RecalcularCargos();
     }
 
@@ -359,6 +489,12 @@
                 Snackbar.Add($"El ítem '{etiqueta}' tiene valores inválidos: Cantidad y Precio Base deben ser mayores a 0", Severity.Error);
                 return;
             }
+
+            if (!string.IsNullOrWhiteSpace(item.UrlReferencia) && !Uri.TryCreate(item.UrlReferencia, UriKind.Absolute, out _))
+            {
+                Snackbar.Add($"El ítem '{etiqueta}' tiene una URL de referencia con formato inválido", Severity.Error);
+                return;
+            }
         }
 
         var presupuesto = new Presupuesto
@@ -388,6 +524,7 @@
         creadoPor = null;
         descripcionTrabajo = null;
         items = new();
+        itemsExpandido = new();
         CrearCargosPorDefecto();
     }
 }
