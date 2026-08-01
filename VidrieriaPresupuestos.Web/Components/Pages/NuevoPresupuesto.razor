@@ -508,7 +508,9 @@
             Fecha = fecha ?? DateTime.Today,
             Estado = EstadoPresupuesto.Pendiente,
             DescripcionTrabajo = descripcionTrabajo,
-            CreadoPor = creadoPor,
+            // TODO: fix temporal - se reemplaza en la Fase B con el flujo real de selección de Cotizador.
+            // CotizadorId/Cotizador y Local/DireccionTrabajo/Comuna (requeridos) quedan sin asignar:
+            // el guardado va a fallar contra la base hasta que se resuelva la Fase B.
             Subtotal = Subtotal,
             ValorNeto = ValorNeto,
             Items = items,

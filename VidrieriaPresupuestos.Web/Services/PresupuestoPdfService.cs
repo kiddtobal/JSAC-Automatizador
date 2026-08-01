@@ -121,7 +121,8 @@ namespace VidrieriaPresupuestos.Web.Services
                 column.Item().AlignRight().Text($"Valor Neto: {presupuesto.ValorNeto:C}").Bold().FontSize(16);
 
                 column.Item().PaddingTop(30).Text("Saluda Atentamente,");
-                column.Item().PaddingTop(30).Text(presupuesto.CreadoPor);
+                // TODO: fix temporal - se reemplaza en la Fase B con el flujo real de selección de Cotizador
+                column.Item().PaddingTop(30).Text(presupuesto.Cotizador?.Nombre ?? "");
             });
         }
 

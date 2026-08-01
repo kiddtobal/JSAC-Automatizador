@@ -25,5 +25,10 @@ namespace VidrieriaPresupuestos.Domain.Entidades
         [Required]
         [Range(0, 9999999999.99)]
         public decimal MontoCalculado { get; set; }
+
+        public int Cantidad { get; set; } = 1;
+
+        [StringLength(20)]
+        public string? Unidad { get; set; } = "u.";
     }
 }

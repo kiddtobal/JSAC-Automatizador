@@ -19,6 +19,15 @@ namespace VidrieriaPresupuestos.Domain.Entidades
         [StringLength(100)]
         public string? Email { get; set; }
 
+        [Required]
+        public Genero Genero { get; set; }
+
+        [StringLength(150)]
+        public string? Cargo { get; set; }
+
+        [StringLength(150)]
+        public string? Empresa { get; set; }
+
         public ICollection<Presupuesto> Presupuestos { get; set; } = new List<Presupuesto>();
     }
 }

@@ -17,6 +17,7 @@ namespace VidrieriaPresupuestos.Web.Data
         public DbSet<Categoria> Categorias { get; set; } = null!;
         public DbSet<ProductoCatalogo> ProductosCatalogo { get; set; } = null!;
         public DbSet<ProductoPrecioReferencia> PreciosReferencia { get; set; } = null!;
+        public DbSet<Cotizador> Cotizadores { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +28,11 @@ namespace VidrieriaPresupuestos.Web.Data
                 entity.HasOne(p => p.Cliente)
                     .WithMany(c => c.Presupuestos)
                     .HasForeignKey(p => p.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.Cotizador)
+                    .WithMany()
+                    .HasForeignKey(p => p.CotizadorId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Property(p => p.Subtotal)

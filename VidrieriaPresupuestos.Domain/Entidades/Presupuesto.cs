@@ -21,9 +21,24 @@ namespace VidrieriaPresupuestos.Domain.Entidades
 
         public string? DescripcionTrabajo { get; set; }
 
+        public string? Referencia { get; set; }
+
+        [Required]
+        [StringLength(150)]
+        public string Local { get; set; } = null!;
+
+        [Required]
+        [StringLength(200)]
+        public string DireccionTrabajo { get; set; } = null!;
+
         [Required]
         [StringLength(100)]
-        public string CreadoPor { get; set; } = null!;
+        public string Comuna { get; set; } = null!;
+
+        public int CotizadorId { get; set; }
+
+        [Required]
+        public Cotizador Cotizador { get; set; } = null!;
 
         [Required]
         [Range(0, 9999999999.99)]

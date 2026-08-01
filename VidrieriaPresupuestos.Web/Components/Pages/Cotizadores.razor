@@ -1,54 +1,48 @@
-@page "/clientes"
+@page "/cotizadores"
 @rendermode InteractiveServer
 @inject VidrieriaContext Context
 @using Microsoft.EntityFrameworkCore
 
 
-<PageTitle>Rimalto - Clientes</PageTitle>
+<PageTitle>Rimalto - Cotizadores</PageTitle>
 
 <MudPaper Class="pa-4 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudText Typo="Typo.h5">Clientes</MudText>
+        <MudText Typo="Typo.h5">Cotizadores</MudText>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="MostrarFormulario">
-            Nuevo Cliente
+            Nuevo Cotizador
         </MudButton>
     </MudStack>
 
     @if (mostrarFormulario)
     {
         <MudPaper Class="pa-4 mb-4" Elevation="2">
-            <MudForm @ref="form" Model="nuevoCliente" @onsubmit="GuardarCliente">
+            <MudForm @ref="form" Model="nuevoCotizador" @onsubmit="GuardarCotizador">
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="nuevoCliente.Nombre"
+                        <MudTextField @bind-Value="nuevoCotizador.Nombre"
                                       Label="Nombre"
                                       Required="true"
                                       RequiredError="El nombre es obligatorio"
                                       Immediate="true" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="nuevoCliente.Telefono"
-                                      Label="Teléfono" />
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="nuevoCliente.Email"
-                                      Label="Email" />
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudSelect T="Genero" @bind-Value="nuevoCliente.Genero" Label="Género" Required="true" RequiredError="Debe seleccionar un género">
-                            @foreach (var genero in Enum.GetValues<Genero>())
-                            {
-                                <MudSelectItem T="Genero" Value="@genero">@genero</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="nuevoCliente.Cargo"
+                        <MudTextField @bind-Value="nuevoCotizador.Cargo"
                                       Label="Cargo" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="nuevoCliente.Empresa"
-                                      Label="Empresa" />
+                        <MudTextField @bind-Value="nuevoCotizador.Celular"
+                                      Label="Celular"
+                                      Required="true"
+                                      RequiredError="El celular es obligatorio"
+                                      Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCotizador.Email"
+                                      Label="Email"
+                                      Required="true"
+                                      RequiredError="El email es obligatorio"
+                                      Immediate="true" />
                     </MudItem>
                 </MudGrid>
 
@@ -64,69 +58,67 @@
         </MudPaper>
     }
 
-    <MudTable Items="clientes" Dense="true" Hover="true" Striped="true" Loading="cargando">
+    <MudTable Items="cotizadores" Dense="true" Hover="true" Striped="true" Loading="cargando">
         <HeaderContent>
             <MudTh>Nombre</MudTh>
-            <MudTh>Teléfono</MudTh>
-            <MudTh>Email</MudTh>
-            <MudTh>Género</MudTh>
             <MudTh>Cargo</MudTh>
-            <MudTh>Empresa</MudTh>
+            <MudTh>Celular</MudTh>
+            <MudTh>Email</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
-            <MudTd DataLabel="Teléfono">@context.Telefono</MudTd>
-            <MudTd DataLabel="Email">@context.Email</MudTd>
-            <MudTd DataLabel="Género">@context.Genero</MudTd>
             <MudTd DataLabel="Cargo">@context.Cargo</MudTd>
-            <MudTd DataLabel="Empresa">@context.Empresa</MudTd>
+            <MudTd DataLabel="Celular">@context.Celular</MudTd>
+            <MudTd DataLabel="Email">@context.Email</MudTd>
         </RowTemplate>
     </MudTable>
 </MudPaper>
 
 @code {
-    private List<Cliente> clientes = new();
-    private Cliente nuevoCliente = new();
+    private List<Cotizador> cotizadores = new();
+    private Cotizador nuevoCotizador = new();
     private MudForm? form;
     private bool mostrarFormulario;
     private bool cargando = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarClientes();
+        await CargarCotizadores();
     }
 
-    private async Task CargarClientes()
+    private async Task CargarCotizadores()
     {
         cargando = true;
-        clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+        cotizadores = await Context.Cotizadores.OrderBy(c => c.Nombre).ToListAsync();
         cargando = false;
     }
 
     private void MostrarFormulario()
     {
-        nuevoCliente = new Cliente();
+        nuevoCotizador = new Cotizador();
         mostrarFormulario = true;
     }
 
     private void CancelarFormulario()
     {
         mostrarFormulario = false;
-        nuevoCliente = new Cliente();
+        nuevoCotizador = new Cotizador();
     }
 
-    private async Task GuardarCliente()
+    private async Task GuardarCotizador()
     {
-        if (string.IsNullOrWhiteSpace(nuevoCliente.Nombre))
+        if (string.IsNullOrWhiteSpace(nuevoCotizador.Nombre)
+            || string.IsNullOrWhiteSpace(nuevoCotizador.Celular)
+            || string.IsNullOrWhiteSpace(nuevoCotizador.Email))
         {
             return;
         }
 
-        Context.Clientes.Add(nuevoCliente);
+        Context.Cotizadores.Add(nuevoCotizador);
         await Context.SaveChangesAsync();
 
         mostrarFormulario = false;
-        nuevoCliente = new Cliente();
-        await CargarClientes();
+        nuevoCotizador = new Cotizador();
+        await CargarCotizadores();
     }
 }

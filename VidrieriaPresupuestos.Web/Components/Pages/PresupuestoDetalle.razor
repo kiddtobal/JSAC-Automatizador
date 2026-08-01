@@ -37,7 +37,8 @@ else if (presupuesto is not null)
             </MudItem>
             <MudItem xs="12" md="3">
                 <MudText Typo="Typo.subtitle2">Creado Por</MudText>
-                <MudText Typo="Typo.body1">@presupuesto.CreadoPor</MudText>
+                @* TODO: fix temporal - se reemplaza en la Fase B con el flujo real de selección de Cotizador *@
+                <MudText Typo="Typo.body1">@(presupuesto.Cotizador?.Nombre ?? "")</MudText>
             </MudItem>
             @if (!string.IsNullOrWhiteSpace(presupuesto.DescripcionTrabajo))
             {
