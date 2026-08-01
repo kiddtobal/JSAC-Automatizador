@@ -36,7 +36,24 @@
             <MudDatePicker Label="Fecha" @bind-Date="fecha" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="creadoPor" Label="Creado Por" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+            <MudSelect T="Cotizador" @bind-Value="cotizadorSeleccionado" Label="Cotizador" Required="true" RequiredError="Debe seleccionar un cotizador">
+                @foreach (var cotizador in cotizadores)
+                {
+                    <MudSelectItem T="Cotizador" Value="@cotizador">@cotizador.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="referencia" Label="Referencia" Immediate="true" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="local" Label="Local" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="direccionTrabajo" Label="Dirección del Trabajo" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="comuna" Label="Comuna" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
         </MudItem>
         <MudItem xs="12">
             <MudTextField @bind-Value="descripcionTrabajo" Label="Descripción del Trabajo" Lines="4" Immediate="true" />
@@ -271,7 +288,12 @@
     private List<Cliente> clientesFiltrados = new();
     private bool clienteInvalidoAlGuardar;
     private DateTime? fecha = DateTime.Today;
-    private string? creadoPor;
+    private List<Cotizador> cotizadores = new();
+    private Cotizador? cotizadorSeleccionado;
+    private string? referencia;
+    private string? local;
+    private string? direccionTrabajo;
+    private string? comuna;
     private string? descripcionTrabajo;
     private List<ItemPresupuesto> items = new();
     private List<CargoAdicional> cargos = new();
@@ -294,6 +316,7 @@
     protected override async Task OnInitializedAsync()
     {
         clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+        cotizadores = await Context.Cotizadores.OrderBy(c => c.Nombre).ToListAsync();
 
         var todasCategorias = await Context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
         categoriasOrdenadas = OrdenarCategoriasJerarquico(todasCategorias);
@@ -471,9 +494,27 @@
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(creadoPor))
+        if (cotizadorSeleccionado is null)
         {
-            Snackbar.Add("Debe indicar quién crea el presupuesto (Creado Por)", Severity.Error);
+            Snackbar.Add("Debe seleccionar un cotizador", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(local))
+        {
+            Snackbar.Add("Debe indicar el Local", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(direccionTrabajo))
+        {
+            Snackbar.Add("Debe indicar la Dirección del Trabajo", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(comuna))
+        {
+            Snackbar.Add("Debe indicar la Comuna", Severity.Error);
             return;
         }
 
@@ -508,9 +549,12 @@
             Fecha = fecha ?? DateTime.Today,
             Estado = EstadoPresupuesto.Pendiente,
             DescripcionTrabajo = descripcionTrabajo,
-            // TODO: fix temporal - se reemplaza en la Fase B con el flujo real de selección de Cotizador.
-            // CotizadorId/Cotizador y Local/DireccionTrabajo/Comuna (requeridos) quedan sin asignar:
-            // el guardado va a fallar contra la base hasta que se resuelva la Fase B.
+            CotizadorId = cotizadorSeleccionado.Id,
+            Cotizador = cotizadorSeleccionado,
+            Referencia = referencia,
+            Local = local,
+            DireccionTrabajo = direccionTrabajo,
+            Comuna = comuna,
             Subtotal = Subtotal,
             ValorNeto = ValorNeto,
             Items = items,
@@ -527,7 +571,11 @@
         clientesFiltrados = new();
         clienteInvalidoAlGuardar = false;
         fecha = DateTime.Today;
-        creadoPor = null;
+        cotizadorSeleccionado = null;
+        referencia = null;
+        local = null;
+        direccionTrabajo = null;
+        comuna = null;
         descripcionTrabajo = null;
         items = new();
         itemsExpandido = new();

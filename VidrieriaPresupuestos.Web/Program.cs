@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using QuestPDF.Infrastructure;
@@ -6,6 +7,10 @@ using VidrieriaPresupuestos.Web.Data;
 using VidrieriaPresupuestos.Web.Services;
 
 QuestPDF.Settings.License = LicenseType.Community;
+
+var culturaApp = new CultureInfo("es-CL");
+CultureInfo.DefaultThreadCurrentCulture = culturaApp;
+CultureInfo.DefaultThreadCurrentUICulture = culturaApp;
 
 var builder = WebApplication.CreateBuilder(args);
 
