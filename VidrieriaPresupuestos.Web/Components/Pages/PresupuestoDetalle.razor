@@ -3,6 +3,8 @@
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject PresupuestoPdfService PdfService
+@inject IJSRuntime JS
 
 <PageTitle>Rimalto - Presupuesto</PageTitle>
 
@@ -145,7 +147,10 @@ else if (presupuesto is not null)
         <MudText Typo="Typo.h4" Color="Color.Primary">Valor Neto: @presupuesto.ValorNeto.ToString("C")</MudText>
     </MudPaper>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Volver">Volver a la lista</MudButton>
+    <MudStack Row="true">
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Volver">Volver a la lista</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="DescargarPdf">Descargar PDF</MudButton>
+    </MudStack>
 }
 
 @code {
@@ -178,5 +183,14 @@ else if (presupuesto is not null)
     private void Volver()
     {
         NavigationManager.NavigateTo("/presupuestos");
+    }
+
+    private async Task DescargarPdf()
+    {
+        var bytes = PdfService.GenerarPdf(presupuesto!);
+        using var stream = new MemoryStream(bytes);
+        using var streamRef = new DotNetStreamReference(stream);
+
+        await JS.InvokeVoidAsync("descargarArchivo", $"Presupuesto_{presupuesto!.Id:0000}.pdf", "application/pdf", streamRef);
     }
 }

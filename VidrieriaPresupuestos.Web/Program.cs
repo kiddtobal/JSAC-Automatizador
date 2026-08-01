@@ -1,7 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using QuestPDF.Infrastructure;
 using VidrieriaPresupuestos.Web.Components;
 using VidrieriaPresupuestos.Web.Data;
+using VidrieriaPresupuestos.Web.Services;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +14,7 @@ builder.Services.AddDbContext<VidrieriaContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("VidrieriaDatabase")));
 
 builder.Services.AddMudServices();
+builder.Services.AddScoped<PresupuestoPdfService>();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
