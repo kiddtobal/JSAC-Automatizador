@@ -47,7 +47,7 @@
 <MudExpansionPanels MultiExpansion="true" Class="mb-4">
     <MudExpansionPanel Text="@($"Materiales ({SubtotalMateriales:C})")" IsInitiallyExpanded="true">
         <MudPaper Outlined="true" Class="pa-2 mb-3">
-            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-ProductoSeleccionado="productoSeleccionadoMaterial" />
+            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-PrecioSeleccionado="productoSeleccionadoMaterial" />
         </MudPaper>
         <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(productoSeleccionadoMaterial is null)" OnClick="AgregarMaterialDesdeProducto">
@@ -127,7 +127,7 @@
 
     <MudExpansionPanel Text="@($"Mano de Obra ({SubtotalManoDeObra:C})")" IsInitiallyExpanded="true">
         <MudPaper Outlined="true" Class="pa-2 mb-3">
-            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-ProductoSeleccionado="productoSeleccionadoManoDeObra" />
+            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-PrecioSeleccionado="productoSeleccionadoManoDeObra" />
         </MudPaper>
         <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(productoSeleccionadoManoDeObra is null)" OnClick="AgregarManoDeObraDesdeProducto">
@@ -280,8 +280,8 @@
     private List<Categoria> categoriasOrdenadas = new();
     private List<ProductoCatalogo> productos = new();
 
-    private ProductoCatalogo? productoSeleccionadoMaterial;
-    private ProductoCatalogo? productoSeleccionadoManoDeObra;
+    private ProductoPrecioReferencia? productoSeleccionadoMaterial;
+    private ProductoPrecioReferencia? productoSeleccionadoManoDeObra;
 
     private IEnumerable<ItemPresupuesto> ItemsMateriales => items.Where(i => i.Seccion == SeccionItem.Materiales);
     private IEnumerable<ItemPresupuesto> ItemsManoDeObra => items.Where(i => i.Seccion == SeccionItem.ManoDeObra);
@@ -357,23 +357,22 @@
     {
         if (productoSeleccionadoMaterial is null)
         {
-            Snackbar.Add("Elegí un producto", Severity.Error);
+            Snackbar.Add("Elegí un precio de referencia", Severity.Error);
             return;
         }
 
-        // TODO: fix temporal - usa el precio de referencia más bajo hasta rediseñar con selector de proveedor
-        var precioMasBajoMaterial = productoSeleccionadoMaterial.PreciosReferencia.OrderBy(p => p.Precio).FirstOrDefault();
+        var producto = productoSeleccionadoMaterial.ProductoCatalogo;
 
         var item = new ItemPresupuesto
         {
             Seccion = SeccionItem.Materiales,
-            Descripcion = productoSeleccionadoMaterial.Nombre,
-            Categoria = productoSeleccionadoMaterial.Categoria.Nombre,
-            Unidad = productoSeleccionadoMaterial.Unidad,
-            Origen = productoSeleccionadoMaterial.Origen,
-            PrecioBase = precioMasBajoMaterial?.Precio ?? 0,
-            PorcentajeComision = productoSeleccionadoMaterial.PorcentajeComision,
-            UrlReferencia = precioMasBajoMaterial?.UrlReferencia,
+            Descripcion = producto.Nombre,
+            Categoria = producto.Categoria.Nombre,
+            Unidad = producto.Unidad,
+            Origen = producto.Origen,
+            PrecioBase = productoSeleccionadoMaterial.Precio,
+            PorcentajeComision = producto.PorcentajeComision,
+            UrlReferencia = productoSeleccionadoMaterial.UrlReferencia,
             Cantidad = 1
         };
 
@@ -388,23 +387,22 @@
     {
         if (productoSeleccionadoManoDeObra is null)
         {
-            Snackbar.Add("Elegí un producto", Severity.Error);
+            Snackbar.Add("Elegí un precio de referencia", Severity.Error);
             return;
         }
 
-        // TODO: fix temporal - usa el precio de referencia más bajo hasta rediseñar con selector de proveedor
-        var precioMasBajoManoDeObra = productoSeleccionadoManoDeObra.PreciosReferencia.OrderBy(p => p.Precio).FirstOrDefault();
+        var producto = productoSeleccionadoManoDeObra.ProductoCatalogo;
 
         var item = new ItemPresupuesto
         {
             Seccion = SeccionItem.ManoDeObra,
-            Descripcion = productoSeleccionadoManoDeObra.Nombre,
-            Categoria = productoSeleccionadoManoDeObra.Categoria.Nombre,
-            Unidad = productoSeleccionadoManoDeObra.Unidad,
-            Origen = productoSeleccionadoManoDeObra.Origen,
-            PrecioBase = precioMasBajoManoDeObra?.Precio ?? 0,
-            PorcentajeComision = productoSeleccionadoManoDeObra.PorcentajeComision,
-            UrlReferencia = precioMasBajoManoDeObra?.UrlReferencia,
+            Descripcion = producto.Nombre,
+            Categoria = producto.Categoria.Nombre,
+            Unidad = producto.Unidad,
+            Origen = producto.Origen,
+            PrecioBase = productoSeleccionadoManoDeObra.Precio,
+            PorcentajeComision = producto.PorcentajeComision,
+            UrlReferencia = productoSeleccionadoManoDeObra.UrlReferencia,
             Cantidad = 1
         };
 

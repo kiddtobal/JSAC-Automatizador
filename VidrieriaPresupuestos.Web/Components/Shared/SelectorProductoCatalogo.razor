@@ -1,40 +1,70 @@
 <MudList T="object" Clickable="true" Dense="true">
     @foreach (var raiz in categoriasPorPadre[null].OrderBy(c => c.Nombre))
     {
-        <MudListItem T="object" OnClick="@(() => AlternarExpandida(raiz.Id))"
-                     Icon="@(EstaExpandida(raiz.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+        <MudListItem T="object" OnClick="@(() => AlternarCategoriaExpandida(raiz.Id))"
+                     Icon="@(EstaCategoriaExpandida(raiz.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
             @raiz.Nombre
         </MudListItem>
 
-        @if (EstaExpandida(raiz.Id))
+        @if (EstaCategoriaExpandida(raiz.Id))
         {
             @foreach (var sub in categoriasPorPadre[raiz.Id].OrderBy(c => c.Nombre))
             {
-                <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarExpandida(sub.Id))"
-                             Icon="@(EstaExpandida(sub.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarCategoriaExpandida(sub.Id))"
+                             Icon="@(EstaCategoriaExpandida(sub.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
                     @sub.Nombre
                 </MudListItem>
 
-                @if (EstaExpandida(sub.Id))
+                @if (EstaCategoriaExpandida(sub.Id))
                 {
                     @foreach (var prod in productosPorCategoria[sub.Id].OrderBy(p => p.Nombre))
                     {
-                        <MudListItem T="object" Class="ml-10"
-                                     Style="@(prod == ProductoSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
-                                     OnClick="@(() => SeleccionarProducto(prod))">
+                        <MudListItem T="object" Class="ml-10" OnClick="@(() => AlternarProductoExpandido(prod.Id))"
+                                     Icon="@(EstaProductoExpandido(prod.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
                             @prod.Nombre
                         </MudListItem>
+
+                        @if (EstaProductoExpandido(prod.Id))
+                        {
+                            @foreach (var precio in prod.PreciosReferencia.OrderBy(p => p.Precio))
+                            {
+                                <MudListItem T="object" Class="ml-16"
+                                             Style="@(precio == PrecioSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
+                                             OnClick="@(() => SeleccionarPrecio(precio))">
+                                    @precio.Proveedor — @precio.Precio.ToString("C")
+                                    @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Class="ml-1" />
+                                    }
+                                </MudListItem>
+                            }
+                        }
                     }
                 }
             }
 
             @foreach (var prod in productosPorCategoria[raiz.Id].OrderBy(p => p.Nombre))
             {
-                <MudListItem T="object" Class="ml-6"
-                             Style="@(prod == ProductoSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
-                             OnClick="@(() => SeleccionarProducto(prod))">
+                <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarProductoExpandido(prod.Id))"
+                             Icon="@(EstaProductoExpandido(prod.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
                     @prod.Nombre
                 </MudListItem>
+
+                @if (EstaProductoExpandido(prod.Id))
+                {
+                    @foreach (var precio in prod.PreciosReferencia.OrderBy(p => p.Precio))
+                    {
+                        <MudListItem T="object" Class="ml-10"
+                                     Style="@(precio == PrecioSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
+                                     OnClick="@(() => SeleccionarPrecio(precio))">
+                            @precio.Proveedor — @precio.Precio.ToString("C")
+                            @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Class="ml-1" />
+                            }
+                        </MudListItem>
+                    }
+                }
             }
         }
     }
@@ -48,12 +78,13 @@
     public List<ProductoCatalogo> Productos { get; set; } = new();
 
     [Parameter]
-    public ProductoCatalogo? ProductoSeleccionado { get; set; }
+    public ProductoPrecioReferencia? PrecioSeleccionado { get; set; }
 
     [Parameter]
-    public EventCallback<ProductoCatalogo?> ProductoSeleccionadoChanged { get; set; }
+    public EventCallback<ProductoPrecioReferencia?> PrecioSeleccionadoChanged { get; set; }
 
     private HashSet<int> categoriasExpandidas = new();
+    private HashSet<int> productosExpandidos = new();
 
     private ILookup<int?, Categoria> categoriasPorPadre = Enumerable.Empty<Categoria>().ToLookup(c => c.CategoriaPadreId);
     private ILookup<int, ProductoCatalogo> productosPorCategoria = Enumerable.Empty<ProductoCatalogo>().ToLookup(p => p.CategoriaId);
@@ -64,9 +95,9 @@
         productosPorCategoria = Productos.ToLookup(p => p.CategoriaId);
     }
 
-    private bool EstaExpandida(int categoriaId) => categoriasExpandidas.Contains(categoriaId);
+    private bool EstaCategoriaExpandida(int categoriaId) => categoriasExpandidas.Contains(categoriaId);
 
-    private void AlternarExpandida(int categoriaId)
+    private void AlternarCategoriaExpandida(int categoriaId)
     {
         if (!categoriasExpandidas.Add(categoriaId))
         {
@@ -74,9 +105,19 @@
         }
     }
 
-    private async Task SeleccionarProducto(ProductoCatalogo producto)
+    private bool EstaProductoExpandido(int productoId) => productosExpandidos.Contains(productoId);
+
+    private void AlternarProductoExpandido(int productoId)
     {
-        ProductoSeleccionado = producto;
-        await ProductoSeleccionadoChanged.InvokeAsync(producto);
+        if (!productosExpandidos.Add(productoId))
+        {
+            productosExpandidos.Remove(productoId);
+        }
+    }
+
+    private async Task SeleccionarPrecio(ProductoPrecioReferencia precio)
+    {
+        PrecioSeleccionado = precio;
+        await PrecioSeleccionadoChanged.InvokeAsync(precio);
     }
 }
