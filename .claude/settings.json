@@ -9,7 +9,9 @@
       "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck17\" -ErrorAction SilentlyContinue)",
       "PowerShell($procs = Get-Process dotnet -ErrorAction SilentlyContinue; if \\($procs\\) { \"Running dotnet processes found: $\\($procs.Id -join ', '\\)\" } else { \"No dotnet processes running\" })",
       "PowerShell($out = \"$env:TEMP\\\\claude\\\\rimalto_buildcheck1\"; dotnet build \"c:\\\\Users\\\\Cris\\\\Desktop\\\\Rimalto\\\\VidrieriaPresupuestos.Web\\\\VidrieriaPresupuestos.Web.csproj\" --output $out -p:UseAppHost=false 2>&1 | Select-String -Pattern \"error|Error|Build succeeded\")",
-      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck1\" -ErrorAction SilentlyContinue; \"cleaned\")"
+      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck1\" -ErrorAction SilentlyContinue; \"cleaned\")",
+      "PowerShell($out = \"$env:TEMP\\\\claude\\\\rimalto_buildcheck2\"; dotnet build \"c:\\\\Users\\\\Cris\\\\Desktop\\\\Rimalto\\\\VidrieriaPresupuestos.Web\\\\VidrieriaPresupuestos.Web.csproj\" --output $out -p:UseAppHost=false 2>&1 | Select-String -Pattern \"error|Error|Build succeeded\")",
+      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck2\" -ErrorAction SilentlyContinue; \"cleaned\")"
     ]
   }
 }
