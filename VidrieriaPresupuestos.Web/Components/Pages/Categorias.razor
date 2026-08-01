@@ -345,6 +345,25 @@
             return;
         }
 
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar categoría",
+            $"¿Seguro que querés eliminar la categoría '{categoriaSeleccionada.Nombre}'? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true)
+        {
+            return;
+        }
+
+        var tieneSubcategorias = categorias.Any(c => c.CategoriaPadreId == categoriaSeleccionada.Id);
+        var tieneProductos = productosCategoria.Count > 0;
+
+        if (tieneSubcategorias || tieneProductos)
+        {
+            Snackbar.Add("No se puede eliminar: la categoría tiene subcategorías o productos asociados.", Severity.Error);
+            return;
+        }
+
         try
         {
             Context.Categorias.Remove(categoriaSeleccionada);
@@ -357,6 +376,11 @@
             await CargarCategorias();
         }
         catch (DbUpdateException)
+        {
+            Context.Entry(categoriaSeleccionada).State = EntityState.Unchanged;
+            Snackbar.Add("No se puede eliminar: la categoría tiene subcategorías o productos asociados.", Severity.Error);
+        }
+        catch (InvalidOperationException)
         {
             Context.Entry(categoriaSeleccionada).State = EntityState.Unchanged;
             Snackbar.Add("No se puede eliminar: la categoría tiene subcategorías o productos asociados.", Severity.Error);
@@ -543,6 +567,16 @@
 
     private async Task EliminarPrecioExistente(ProductoCatalogo producto, ProductoPrecioReferencia precio)
     {
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar precio de referencia",
+            $"¿Seguro que querés eliminar el precio de '{precio.Proveedor}' ({precio.Precio:C})? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true)
+        {
+            return;
+        }
+
         Context.PreciosReferencia.Remove(precio);
         await Context.SaveChangesAsync();
 
@@ -552,11 +586,34 @@
 
     private async Task EliminarProducto(ProductoCatalogo producto)
     {
-        Context.ProductosCatalogo.Remove(producto);
-        await Context.SaveChangesAsync();
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar producto",
+            $"¿Seguro que querés eliminar el producto '{producto.Nombre}'? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
 
-        productosCategoria.Remove(producto);
-        productosExpandido.Remove(producto.Id);
-        Snackbar.Add("Producto eliminado", Severity.Success);
+        if (confirmado != true)
+        {
+            return;
+        }
+
+        try
+        {
+            Context.ProductosCatalogo.Remove(producto);
+            await Context.SaveChangesAsync();
+
+            productosCategoria.Remove(producto);
+            productosExpandido.Remove(producto.Id);
+            Snackbar.Add("Producto eliminado", Severity.Success);
+        }
+        catch (DbUpdateException)
+        {
+            Context.Entry(producto).State = EntityState.Unchanged;
+            Snackbar.Add("No se pudo eliminar el producto.", Severity.Error);
+        }
+        catch (InvalidOperationException)
+        {
+            Context.Entry(producto).State = EntityState.Unchanged;
+            Snackbar.Add("No se pudo eliminar el producto.", Severity.Error);
+        }
     }
 }

@@ -1,6 +1,8 @@
 @page "/cotizadores"
 @rendermode InteractiveServer
 @inject VidrieriaContext Context
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @using Microsoft.EntityFrameworkCore
 
 
@@ -58,20 +60,62 @@
         </MudPaper>
     }
 
-    <MudTable Items="cotizadores" Dense="true" Hover="true" Striped="true" Loading="cargando">
-        <HeaderContent>
-            <MudTh>Nombre</MudTh>
-            <MudTh>Cargo</MudTh>
-            <MudTh>Celular</MudTh>
-            <MudTh>Email</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
-            <MudTd DataLabel="Cargo">@context.Cargo</MudTd>
-            <MudTd DataLabel="Celular">@context.Celular</MudTd>
-            <MudTd DataLabel="Email">@context.Email</MudTd>
-        </RowTemplate>
-    </MudTable>
+    @if (cargando)
+    {
+        <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    }
+    else if (cotizadores.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="pa-2">No hay cotizadores creados todavía.</MudText>
+    }
+    else
+    {
+        @foreach (var cotizador in cotizadores)
+        {
+            @if (EstaCotizadorExpandido(cotizador))
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudGrid>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cotizador.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cotizador.Cargo" Label="Cargo" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cotizador.Celular" Label="Celular" Immediate="true" Required="true" RequiredError="El celular es obligatorio" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cotizador.Email" Label="Email" Immediate="true" Required="true" RequiredError="El email es obligatorio" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudStack Row="true" Class="mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GuardarCambiosCotizador(cotizador))">Guardar Cambios</MudButton>
+                        <MudButton Variant="Variant.Text" OnClick="@(() => AlternarCotizadorExpandido(cotizador))">Listo</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => EliminarCotizador(cotizador))">Eliminar Cotizador</MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <span>
+                            @cotizador.Nombre
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:inline-block; margin-left:4px;">
+                                (@TextoResumenCotizador(cotizador))
+                            </MudText>
+                        </span>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => AlternarCotizadorExpandido(cotizador))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminarCotizador(cotizador))" />
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
+        }
+    }
 </MudPaper>
 
 @code {
@@ -80,6 +124,7 @@
     private MudForm? form;
     private bool mostrarFormulario;
     private bool cargando = true;
+    private HashSet<int> cotizadoresExpandido = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,5 +165,77 @@
         mostrarFormulario = false;
         nuevoCotizador = new Cotizador();
         await CargarCotizadores();
+    }
+
+    private bool EstaCotizadorExpandido(Cotizador cotizador) => cotizadoresExpandido.Contains(cotizador.Id);
+
+    private void AlternarCotizadorExpandido(Cotizador cotizador)
+    {
+        if (!cotizadoresExpandido.Add(cotizador.Id))
+        {
+            cotizadoresExpandido.Remove(cotizador.Id);
+        }
+    }
+
+    private string TextoResumenCotizador(Cotizador cotizador)
+    {
+        var partes = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(cotizador.Cargo))
+        {
+            partes.Add(cotizador.Cargo);
+        }
+
+        partes.Add(cotizador.Celular);
+        partes.Add(cotizador.Email);
+
+        return string.Join(" · ", partes);
+    }
+
+    private async Task GuardarCambiosCotizador(Cotizador cotizador)
+    {
+        if (string.IsNullOrWhiteSpace(cotizador.Nombre)
+            || string.IsNullOrWhiteSpace(cotizador.Celular)
+            || string.IsNullOrWhiteSpace(cotizador.Email))
+        {
+            Snackbar.Add("Nombre, Celular y Email son obligatorios", Severity.Error);
+            return;
+        }
+
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Cotizador actualizado", Severity.Success);
+    }
+
+    private async Task EliminarCotizador(Cotizador cotizador)
+    {
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar cotizador",
+            $"¿Seguro que querés eliminar el cotizador '{cotizador.Nombre}'? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true)
+        {
+            return;
+        }
+
+        try
+        {
+            Context.Cotizadores.Remove(cotizador);
+            await Context.SaveChangesAsync();
+
+            cotizadores.Remove(cotizador);
+            cotizadoresExpandido.Remove(cotizador.Id);
+            Snackbar.Add("Cotizador eliminado", Severity.Success);
+        }
+        catch (DbUpdateException)
+        {
+            Context.Entry(cotizador).State = EntityState.Unchanged;
+            Snackbar.Add("No se puede eliminar: tiene presupuestos asociados.", Severity.Error);
+        }
+        catch (InvalidOperationException)
+        {
+            Context.Entry(cotizador).State = EntityState.Unchanged;
+            Snackbar.Add("No se puede eliminar: tiene presupuestos asociados.", Severity.Error);
+        }
     }
 }

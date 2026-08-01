@@ -311,6 +311,7 @@
     private decimal SubtotalMateriales => ItemsMateriales.Sum(i => i.Total);
     private decimal SubtotalManoDeObra => ItemsManoDeObra.Sum(i => i.Total);
     private decimal Subtotal => items.Sum(i => i.Total);
+    private decimal SubtotalSinComision => items.Where(i => i.Origen == OrigenItem.Inventario).Sum(i => i.Total);
     private decimal ValorNeto => Subtotal + cargos.Sum(c => c.MontoCalculado);
 
     protected override async Task OnInitializedAsync()
@@ -370,8 +371,10 @@
     {
         cargos = new List<CargoAdicional>
         {
-            new() { Nombre = "Utilidad", TipoValor = TipoValorCargo.Porcentaje, Valor = 20 },
-            new() { Nombre = "Gastos Generales", TipoValor = TipoValorCargo.Porcentaje, Valor = 10 }
+            new() { Nombre = "Utilidad", TipoValor = TipoValorCargo.Porcentaje, Valor = 20, CalcularSoloSobreInventario = true },
+            new() { Nombre = "Gastos Generales", TipoValor = TipoValorCargo.Porcentaje, Valor = 10 },
+            new() { Nombre = "Fletes", TipoValor = TipoValorCargo.MontoFijo, Valor = 0, Cantidad = 1, Unidad = "u." },
+            new() { Nombre = "Viáticos y estadía", TipoValor = TipoValorCargo.MontoFijo, Valor = 0, Cantidad = 1, Unidad = "u." }
         };
         RecalcularCargos();
     }
@@ -480,9 +483,11 @@
     private void RecalcularCargo(CargoAdicional cargo)
     {
         cargo.Valor = Math.Round(cargo.Valor, 0, MidpointRounding.AwayFromZero);
+        var baseCalculo = cargo.CalcularSoloSobreInventario ? SubtotalSinComision : Subtotal;
+
         cargo.MontoCalculado = cargo.TipoValor == TipoValorCargo.Porcentaje
-            ? Math.Round(Subtotal * cargo.Valor / 100, 0, MidpointRounding.AwayFromZero)
-            : cargo.Valor;
+            ? Math.Round(baseCalculo * cargo.Valor / 100, 0, MidpointRounding.AwayFromZero)
+            : Math.Round(cargo.Cantidad * cargo.Valor, 0, MidpointRounding.AwayFromZero);
     }
 
     private async Task GuardarPresupuesto()

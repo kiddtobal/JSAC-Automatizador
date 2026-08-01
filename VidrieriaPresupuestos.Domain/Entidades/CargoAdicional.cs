@@ -30,5 +30,7 @@ namespace VidrieriaPresupuestos.Domain.Entidades
 
         [StringLength(20)]
         public string? Unidad { get; set; } = "u.";
+
+        public bool CalcularSoloSobreInventario { get; set; }
     }
 }
