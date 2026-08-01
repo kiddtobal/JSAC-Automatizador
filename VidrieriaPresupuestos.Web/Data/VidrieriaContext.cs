@@ -16,6 +16,7 @@ namespace VidrieriaPresupuestos.Web.Data
         public DbSet<CargoAdicional> CargosAdicionales { get; set; } = null!;
         public DbSet<Categoria> Categorias { get; set; } = null!;
         public DbSet<ProductoCatalogo> ProductosCatalogo { get; set; } = null!;
+        public DbSet<ProductoPrecioReferencia> PreciosReferencia { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -84,10 +85,18 @@ namespace VidrieriaPresupuestos.Web.Data
                     .HasForeignKey(p => p.CategoriaId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(p => p.PrecioBase)
-                    .HasPrecision(10, 2);
-
                 entity.Property(p => p.PorcentajeComision)
+                    .HasPrecision(10, 2);
+            });
+
+            modelBuilder.Entity<ProductoPrecioReferencia>(entity =>
+            {
+                entity.HasOne(pr => pr.ProductoCatalogo)
+                    .WithMany(p => p.PreciosReferencia)
+                    .HasForeignKey(pr => pr.ProductoCatalogoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(pr => pr.Precio)
                     .HasPrecision(10, 2);
             });
         }

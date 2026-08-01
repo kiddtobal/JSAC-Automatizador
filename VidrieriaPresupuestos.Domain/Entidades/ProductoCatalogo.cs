@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace VidrieriaPresupuestos.Domain.Entidades
 {
@@ -23,15 +24,11 @@ namespace VidrieriaPresupuestos.Domain.Entidades
         public OrigenItem Origen { get; set; }
 
         [Required]
-        [Range(0, 9999999999.99)]
-        public decimal PrecioBase { get; set; }
-
-        [Required]
         [Range(0, 100)]
         public decimal PorcentajeComision { get; set; }
 
         public bool Activo { get; set; } = true;
 
-        public string? UrlReferencia { get; set; }
+        public ICollection<ProductoPrecioReferencia> PreciosReferencia { get; set; } = new List<ProductoPrecioReferencia>();
     }
 }

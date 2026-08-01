@@ -298,7 +298,7 @@
         var todasCategorias = await Context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
         categoriasOrdenadas = OrdenarCategoriasJerarquico(todasCategorias);
 
-        productos = await Context.ProductosCatalogo.Include(p => p.Categoria).OrderBy(p => p.Nombre).ToListAsync();
+        productos = await Context.ProductosCatalogo.Include(p => p.Categoria).Include(p => p.PreciosReferencia).OrderBy(p => p.Nombre).ToListAsync();
 
         CrearCargosPorDefecto();
     }
@@ -361,6 +361,9 @@
             return;
         }
 
+        // TODO: fix temporal - usa el precio de referencia más bajo hasta rediseñar con selector de proveedor
+        var precioMasBajoMaterial = productoSeleccionadoMaterial.PreciosReferencia.OrderBy(p => p.Precio).FirstOrDefault();
+
         var item = new ItemPresupuesto
         {
             Seccion = SeccionItem.Materiales,
@@ -368,9 +371,9 @@
             Categoria = productoSeleccionadoMaterial.Categoria.Nombre,
             Unidad = productoSeleccionadoMaterial.Unidad,
             Origen = productoSeleccionadoMaterial.Origen,
-            PrecioBase = productoSeleccionadoMaterial.PrecioBase,
+            PrecioBase = precioMasBajoMaterial?.Precio ?? 0,
             PorcentajeComision = productoSeleccionadoMaterial.PorcentajeComision,
-            UrlReferencia = productoSeleccionadoMaterial.UrlReferencia,
+            UrlReferencia = precioMasBajoMaterial?.UrlReferencia,
             Cantidad = 1
         };
 
@@ -389,6 +392,9 @@
             return;
         }
 
+        // TODO: fix temporal - usa el precio de referencia más bajo hasta rediseñar con selector de proveedor
+        var precioMasBajoManoDeObra = productoSeleccionadoManoDeObra.PreciosReferencia.OrderBy(p => p.Precio).FirstOrDefault();
+
         var item = new ItemPresupuesto
         {
             Seccion = SeccionItem.ManoDeObra,
@@ -396,9 +402,9 @@
             Categoria = productoSeleccionadoManoDeObra.Categoria.Nombre,
             Unidad = productoSeleccionadoManoDeObra.Unidad,
             Origen = productoSeleccionadoManoDeObra.Origen,
-            PrecioBase = productoSeleccionadoManoDeObra.PrecioBase,
+            PrecioBase = precioMasBajoManoDeObra?.Precio ?? 0,
             PorcentajeComision = productoSeleccionadoManoDeObra.PorcentajeComision,
-            UrlReferencia = productoSeleccionadoManoDeObra.UrlReferencia,
+            UrlReferencia = precioMasBajoManoDeObra?.UrlReferencia,
             Cantidad = 1
         };
 

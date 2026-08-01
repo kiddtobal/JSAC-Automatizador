@@ -72,22 +72,48 @@
                                 <MudItem xs="12" sm="6">
                                     <MudTextField @bind-Value="nuevoProductoNombre" Label="Nombre" Immediate="true" Required="true" RequiredError="Obligatorio" />
                                 </MudItem>
-                                <MudItem xs="12" sm="6">
+                                <MudItem xs="12" sm="4">
                                     <MudTextField @bind-Value="nuevoProductoUnidad" Label="Unidad (ej: u., m2, ml)" Immediate="true" Required="true" RequiredError="Obligatorio" />
                                 </MudItem>
-                                <MudItem xs="12" sm="6">
-                                    <MudNumericField T="decimal" @bind-Value="nuevoProductoPrecioBase" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" Class="d-flex align-center">
+                                <MudItem xs="12" sm="2" Class="d-flex align-center">
                                     <MudCheckBox T="bool" @bind-Value="nuevoProductoExterno" Label="Externo (+20%)" />
                                 </MudItem>
-                                <MudItem xs="12">
-                                    <MudTextField @bind-Value="nuevoProductoUrlReferencia" Label="URL de Referencia (opcional)" Immediate="true" />
+                            </MudGrid>
+
+                            <MudDivider Class="my-3" />
+
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Precios de Referencia</MudText>
+
+                            @if (nuevosPreciosProducto.Count == 0)
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">Todavía no agregaste ningún precio. Se necesita al menos uno para guardar.</MudText>
+                            }
+                            else
+                            {
+                                @foreach (var precio in nuevosPreciosProducto)
+                                {
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
+                                        <MudText Typo="Typo.body2">@precio.Proveedor — @precio.Precio.ToString("C")@(string.IsNullOrWhiteSpace(precio.UrlReferencia) ? "" : " (con link)")</MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => nuevosPreciosProducto.Remove(precio))" />
+                                    </MudStack>
+                                }
+                            }
+
+                            <MudGrid Class="mt-1">
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="nuevoPrecioProveedor" Label="Proveedor" Immediate="true" />
                                 </MudItem>
-                                <MudItem xs="12">
-                                    <MudText Typo="Typo.body1">Precio Final: @NuevoProductoPrecioFinalPreview.ToString("C")</MudText>
+                                <MudItem xs="12" sm="3">
+                                    <MudNumericField T="decimal" @bind-Value="nuevoPrecioValor" Label="Precio" Immediate="true" Min="0" Format="F0" />
+                                </MudItem>
+                                <MudItem xs="12" sm="3">
+                                    <MudTextField @bind-Value="nuevoPrecioUrl" Label="URL (opcional)" Immediate="true" />
+                                </MudItem>
+                                <MudItem xs="12" sm="2">
+                                    <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="AgregarPrecioAlNuevoProducto">+ Precio</MudButton>
                                 </MudItem>
                             </MudGrid>
+
                             <MudStack Row="true" Class="mt-3">
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarProducto">Guardar</MudButton>
                                 <MudButton Variant="Variant.Outlined" OnClick="CancelarFormProducto">Cancelar</MudButton>
@@ -101,22 +127,100 @@
                     }
                     else
                     {
-                        <MudList T="ProductoCatalogo">
-                            @foreach (var producto in productosCategoria)
+                        @foreach (var producto in productosCategoria)
+                        {
+                            @if (EstaProductoExpandido(producto))
                             {
-                                <MudListItem T="ProductoCatalogo">
-                                    <div class="d-flex justify-space-between align-center" style="width:100%">
+                                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                                    <MudGrid>
+                                        <MudItem xs="12" sm="6">
+                                            <MudTextField @bind-Value="producto.Nombre" Label="Nombre" Immediate="true" />
+                                        </MudItem>
+                                        <MudItem xs="12" sm="6">
+                                            <MudTextField @bind-Value="producto.Unidad" Label="Unidad" Immediate="true" />
+                                        </MudItem>
+                                        <MudItem xs="6" sm="3" Class="d-flex align-center">
+                                            <MudCheckBox T="bool" Value="@(producto.Origen == OrigenItem.MaterialExterno)" ValueChanged="@((bool v) => OnExternoProductoChanged(producto, v))" Label="Externo (+20%)" />
+                                        </MudItem>
+                                        <MudItem xs="6" sm="3" Class="d-flex align-center">
+                                            <MudCheckBox T="bool" @bind-Value="producto.Activo" Label="Activo" />
+                                        </MudItem>
+                                    </MudGrid>
+
+                                    <MudStack Row="true" Class="mt-2 mb-3">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GuardarCambiosProducto(producto))">Guardar Cambios</MudButton>
+                                        <MudButton Variant="Variant.Text" OnClick="@(() => AlternarProductoExpandido(producto))">Listo</MudButton>
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => EliminarProducto(producto))">Eliminar Producto</MudButton>
+                                    </MudStack>
+
+                                    <MudDivider Class="mb-3" />
+
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2">Precios de Referencia</MudText>
+
+                                    @if (producto.PreciosReferencia.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">Sin precios cargados.</MudText>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var precio in producto.PreciosReferencia.OrderBy(p => p.Precio))
+                                        {
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
+                                                <span>
+                                                    <MudText Typo="Typo.body2" Style="display:inline">@precio.Proveedor — @precio.Precio.ToString("C")</MudText>
+                                                    @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
+                                                    {
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" Href="@precio.UrlReferencia" Target="_blank" />
+                                                    }
+                                                </span>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => EliminarPrecioExistente(producto, precio))" />
+                                            </MudStack>
+                                        }
+                                    }
+
+                                    @if (productoAgregandoPrecioId == producto.Id)
+                                    {
+                                        <MudGrid Class="mt-1">
+                                            <MudItem xs="12" sm="4">
+                                                <MudTextField @bind-Value="nuevoPrecioExistenteProveedor" Label="Proveedor" Immediate="true" />
+                                            </MudItem>
+                                            <MudItem xs="12" sm="3">
+                                                <MudNumericField T="decimal" @bind-Value="nuevoPrecioExistenteValor" Label="Precio" Immediate="true" Min="0" Format="F0" />
+                                            </MudItem>
+                                            <MudItem xs="12" sm="3">
+                                                <MudTextField @bind-Value="nuevoPrecioExistenteUrl" Label="URL (opcional)" Immediate="true" />
+                                            </MudItem>
+                                            <MudItem xs="12" sm="2">
+                                                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="@(() => GuardarPrecioExistente(producto))">Guardar</MudButton>
+                                            </MudItem>
+                                        </MudGrid>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => MostrarFormPrecioExistente(producto))">
+                                            Agregar Precio
+                                        </MudButton>
+                                    }
+                                </MudPaper>
+                            }
+                            else
+                            {
+                                <MudPaper Outlined="true" Class="pa-3 mb-2" Style="@(producto.Activo ? null : "opacity:0.6;")">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                                         <span>
                                             @producto.Nombre
                                             <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:inline-block; margin-left:4px;">
-                                                (Base: @producto.PrecioBase.ToString("C")@(producto.Origen == OrigenItem.MaterialExterno ? " · Externo" : "") · Final: @PrecioFinal(producto).ToString("C"))
+                                                (@producto.Unidad@(producto.Origen == OrigenItem.MaterialExterno ? " · Externo" : "")@(producto.Activo ? "" : " · Inactivo") · @TextoResumenPrecios(producto))
                                             </MudText>
                                         </span>
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminarProducto(producto))" />
-                                    </div>
-                                </MudListItem>
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => AlternarProductoExpandido(producto))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminarProducto(producto))" />
+                                        </MudStack>
+                                    </MudStack>
+                                </MudPaper>
                             }
-                        </MudList>
+                        }
                     }
                 </MudPaper>
             }
@@ -133,15 +237,22 @@
     private string? nombreEdicion;
 
     private List<ProductoCatalogo> productosCategoria = new();
+    private HashSet<int> productosExpandido = new();
+
     private bool mostrarFormProducto;
     private string? nuevoProductoNombre;
     private string? nuevoProductoUnidad;
-    private decimal nuevoProductoPrecioBase;
     private bool nuevoProductoExterno;
-    private string? nuevoProductoUrlReferencia;
+    private List<ProductoPrecioReferencia> nuevosPreciosProducto = new();
 
-    private decimal NuevoProductoPrecioFinalPreview =>
-        Math.Round(nuevoProductoPrecioBase * (nuevoProductoExterno ? 1.20m : 1m), 0, MidpointRounding.AwayFromZero);
+    private string? nuevoPrecioProveedor;
+    private decimal nuevoPrecioValor;
+    private string? nuevoPrecioUrl;
+
+    private int? productoAgregandoPrecioId;
+    private string? nuevoPrecioExistenteProveedor;
+    private decimal nuevoPrecioExistenteValor;
+    private string? nuevoPrecioExistenteUrl;
 
     protected override async Task OnInitializedAsync()
     {
@@ -198,11 +309,14 @@
     {
         nombreEdicion = categoriaSeleccionada?.Nombre;
         mostrarFormProducto = false;
+        productosExpandido = new();
+        productoAgregandoPrecioId = null;
         productosCategoria = new();
 
         if (categoriaSeleccionada is not null)
         {
             productosCategoria = await Context.ProductosCatalogo
+                .Include(p => p.PreciosReferencia)
                 .Where(p => p.CategoriaId == categoriaSeleccionada.Id)
                 .OrderBy(p => p.Nombre)
                 .ToListAsync();
@@ -249,22 +363,84 @@
         }
     }
 
-    private decimal PrecioFinal(ProductoCatalogo producto) =>
-        Math.Round(producto.PrecioBase * (1 + producto.PorcentajeComision / 100), 0, MidpointRounding.AwayFromZero);
+    private bool EstaProductoExpandido(ProductoCatalogo producto) => productosExpandido.Contains(producto.Id);
+
+    private void AlternarProductoExpandido(ProductoCatalogo producto)
+    {
+        if (!productosExpandido.Add(producto.Id))
+        {
+            productosExpandido.Remove(producto.Id);
+            if (productoAgregandoPrecioId == producto.Id)
+            {
+                productoAgregandoPrecioId = null;
+            }
+        }
+    }
+
+    private string TextoResumenPrecios(ProductoCatalogo producto)
+    {
+        if (producto.PreciosReferencia.Count == 0)
+        {
+            return "Sin precios cargados";
+        }
+
+        var minimo = producto.PreciosReferencia.Min(p => p.Precio);
+        var cantidad = producto.PreciosReferencia.Count;
+        return $"Desde {minimo:C} ({cantidad} precio{(cantidad == 1 ? "" : "s")})";
+    }
+
+    private bool UrlValida(string? url) => string.IsNullOrWhiteSpace(url) || Uri.TryCreate(url, UriKind.Absolute, out _);
 
     private void MostrarFormProducto()
     {
         nuevoProductoNombre = null;
         nuevoProductoUnidad = null;
-        nuevoProductoPrecioBase = 0;
         nuevoProductoExterno = false;
-        nuevoProductoUrlReferencia = null;
+        nuevosPreciosProducto = new();
+        LimpiarMiniFormPrecio();
         mostrarFormProducto = true;
     }
 
     private void CancelarFormProducto()
     {
         mostrarFormProducto = false;
+    }
+
+    private void LimpiarMiniFormPrecio()
+    {
+        nuevoPrecioProveedor = null;
+        nuevoPrecioValor = 0;
+        nuevoPrecioUrl = null;
+    }
+
+    private void AgregarPrecioAlNuevoProducto()
+    {
+        if (string.IsNullOrWhiteSpace(nuevoPrecioProveedor))
+        {
+            Snackbar.Add("El proveedor es obligatorio", Severity.Error);
+            return;
+        }
+
+        if (nuevoPrecioValor <= 0)
+        {
+            Snackbar.Add("El precio debe ser mayor a 0", Severity.Error);
+            return;
+        }
+
+        if (!UrlValida(nuevoPrecioUrl))
+        {
+            Snackbar.Add("La URL no tiene un formato válido", Severity.Error);
+            return;
+        }
+
+        nuevosPreciosProducto.Add(new ProductoPrecioReferencia
+        {
+            Proveedor = nuevoPrecioProveedor,
+            Precio = Math.Round(nuevoPrecioValor, 0, MidpointRounding.AwayFromZero),
+            UrlReferencia = string.IsNullOrWhiteSpace(nuevoPrecioUrl) ? null : nuevoPrecioUrl
+        });
+
+        LimpiarMiniFormPrecio();
     }
 
     private async Task GuardarProducto()
@@ -275,15 +451,9 @@
             return;
         }
 
-        if (nuevoProductoPrecioBase <= 0)
+        if (nuevosPreciosProducto.Count == 0)
         {
-            Snackbar.Add("El Precio Base debe ser mayor a 0", Severity.Error);
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(nuevoProductoUrlReferencia) && !Uri.TryCreate(nuevoProductoUrlReferencia, UriKind.Absolute, out _))
-        {
-            Snackbar.Add("La URL de referencia no tiene un formato válido", Severity.Error);
+            Snackbar.Add("Debe agregar al menos un precio de referencia antes de guardar", Severity.Error);
             return;
         }
 
@@ -292,11 +462,10 @@
             CategoriaId = categoriaSeleccionada.Id,
             Nombre = nuevoProductoNombre,
             Unidad = nuevoProductoUnidad,
-            PrecioBase = Math.Round(nuevoProductoPrecioBase, 0, MidpointRounding.AwayFromZero),
             Origen = nuevoProductoExterno ? OrigenItem.MaterialExterno : OrigenItem.Inventario,
             PorcentajeComision = nuevoProductoExterno ? 20 : 0,
             Activo = true,
-            UrlReferencia = string.IsNullOrWhiteSpace(nuevoProductoUrlReferencia) ? null : nuevoProductoUrlReferencia
+            PreciosReferencia = nuevosPreciosProducto
         };
 
         Context.ProductosCatalogo.Add(producto);
@@ -309,12 +478,85 @@
         Snackbar.Add("Producto agregado", Severity.Success);
     }
 
+    private void OnExternoProductoChanged(ProductoCatalogo producto, bool externo)
+    {
+        producto.Origen = externo ? OrigenItem.MaterialExterno : OrigenItem.Inventario;
+        producto.PorcentajeComision = externo ? 20 : 0;
+    }
+
+    private async Task GuardarCambiosProducto(ProductoCatalogo producto)
+    {
+        if (string.IsNullOrWhiteSpace(producto.Nombre) || string.IsNullOrWhiteSpace(producto.Unidad))
+        {
+            Snackbar.Add("Nombre y Unidad son obligatorios", Severity.Error);
+            return;
+        }
+
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Producto actualizado", Severity.Success);
+    }
+
+    private void MostrarFormPrecioExistente(ProductoCatalogo producto)
+    {
+        productoAgregandoPrecioId = producto.Id;
+        nuevoPrecioExistenteProveedor = null;
+        nuevoPrecioExistenteValor = 0;
+        nuevoPrecioExistenteUrl = null;
+    }
+
+    private async Task GuardarPrecioExistente(ProductoCatalogo producto)
+    {
+        if (string.IsNullOrWhiteSpace(nuevoPrecioExistenteProveedor))
+        {
+            Snackbar.Add("El proveedor es obligatorio", Severity.Error);
+            return;
+        }
+
+        if (nuevoPrecioExistenteValor <= 0)
+        {
+            Snackbar.Add("El precio debe ser mayor a 0", Severity.Error);
+            return;
+        }
+
+        if (!UrlValida(nuevoPrecioExistenteUrl))
+        {
+            Snackbar.Add("La URL no tiene un formato válido", Severity.Error);
+            return;
+        }
+
+        var precio = new ProductoPrecioReferencia
+        {
+            ProductoCatalogoId = producto.Id,
+            Proveedor = nuevoPrecioExistenteProveedor,
+            Precio = Math.Round(nuevoPrecioExistenteValor, 0, MidpointRounding.AwayFromZero),
+            UrlReferencia = string.IsNullOrWhiteSpace(nuevoPrecioExistenteUrl) ? null : nuevoPrecioExistenteUrl
+        };
+
+        Context.PreciosReferencia.Add(precio);
+        await Context.SaveChangesAsync();
+
+        producto.PreciosReferencia.Add(precio);
+        productoAgregandoPrecioId = null;
+
+        Snackbar.Add("Precio agregado", Severity.Success);
+    }
+
+    private async Task EliminarPrecioExistente(ProductoCatalogo producto, ProductoPrecioReferencia precio)
+    {
+        Context.PreciosReferencia.Remove(precio);
+        await Context.SaveChangesAsync();
+
+        producto.PreciosReferencia.Remove(precio);
+        Snackbar.Add("Precio eliminado", Severity.Success);
+    }
+
     private async Task EliminarProducto(ProductoCatalogo producto)
     {
         Context.ProductosCatalogo.Remove(producto);
         await Context.SaveChangesAsync();
 
         productosCategoria.Remove(producto);
+        productosExpandido.Remove(producto.Id);
         Snackbar.Add("Producto eliminado", Severity.Success);
     }
 }
