@@ -11,7 +11,9 @@
       "PowerShell($out = \"$env:TEMP\\\\claude\\\\rimalto_buildcheck1\"; dotnet build \"c:\\\\Users\\\\Cris\\\\Desktop\\\\Rimalto\\\\VidrieriaPresupuestos.Web\\\\VidrieriaPresupuestos.Web.csproj\" --output $out -p:UseAppHost=false 2>&1 | Select-String -Pattern \"error|Error|Build succeeded\")",
       "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck1\" -ErrorAction SilentlyContinue; \"cleaned\")",
       "PowerShell($out = \"$env:TEMP\\\\claude\\\\rimalto_buildcheck2\"; dotnet build \"c:\\\\Users\\\\Cris\\\\Desktop\\\\Rimalto\\\\VidrieriaPresupuestos.Web\\\\VidrieriaPresupuestos.Web.csproj\" --output $out -p:UseAppHost=false 2>&1 | Select-String -Pattern \"error|Error|Build succeeded\")",
-      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck2\" -ErrorAction SilentlyContinue; \"cleaned\")"
+      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck2\" -ErrorAction SilentlyContinue; \"cleaned\")",
+      "PowerShell($out = \"$env:TEMP\\\\claude\\\\rimalto_buildcheck3\"; dotnet build \"c:\\\\Users\\\\Cris\\\\Desktop\\\\Rimalto\\\\VidrieriaPresupuestos.Web\\\\VidrieriaPresupuestos.Web.csproj\" --output $out -p:UseAppHost=false 2>&1 | Select-String -Pattern \"error|Error|Build succeeded\")",
+      "PowerShell(Remove-Item -Recurse -Force \"$env:TEMP\\\\claude\\\\rimalto_buildcheck3\" -ErrorAction SilentlyContinue; \"cleaned\")"
     ]
   }
 }

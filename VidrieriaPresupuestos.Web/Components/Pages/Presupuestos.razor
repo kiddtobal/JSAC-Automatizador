@@ -28,14 +28,13 @@
 </MudPaper>
 
 <MudPaper Class="pa-4">
-    <MudTable T="Presupuesto" Items="presupuestosFiltrados" Hover="true"
-              RowClick="@((TableRowClickEventArgs<Presupuesto> args) => VerDetalle(args.Item))"
-              RowStyle="cursor: pointer;">
+    <MudTable T="Presupuesto" Items="presupuestosFiltrados" Hover="true">
         <HeaderContent>
             <MudTh>Cliente</MudTh>
             <MudTh>Fecha</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh>Valor Neto</MudTh>
+            <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Cliente">@context.Cliente.Nombre</MudTd>
@@ -44,6 +43,12 @@
                 <MudChip T="string" Color="@ColorEstado(context.Estado)" Size="Size.Small">@context.Estado</MudChip>
             </MudTd>
             <MudTd DataLabel="Valor Neto">@context.ValorNeto.ToString("C")</MudTd>
+            <MudTd>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" OnClick="@(() => VerDetalle(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => VerDetalle(context))" />
+                </MudStack>
+            </MudTd>
         </RowTemplate>
         <NoRecordsContent>
             <MudText>No hay presupuestos que coincidan con los filtros.</MudText>
