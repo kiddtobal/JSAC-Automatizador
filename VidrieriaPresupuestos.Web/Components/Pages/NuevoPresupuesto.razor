@@ -398,7 +398,7 @@
     {
         if (productoSeleccionadoMaterial is null)
         {
-            Snackbar.Add("Elegí un precio de referencia", Severity.Error);
+            Snackbar.Add("Debe seleccionar un precio de referencia", Severity.Error);
             return;
         }
 
@@ -428,7 +428,7 @@
     {
         if (string.IsNullOrWhiteSpace(tipoManoDeObra))
         {
-            Snackbar.Add("Elegí el tipo de mano de obra", Severity.Error);
+            Snackbar.Add("Debe seleccionar el tipo de mano de obra", Severity.Error);
             return;
         }
 

@@ -296,7 +296,7 @@
     {
         var confirmado = await DialogService.ShowMessageBoxAsync(
             "Eliminar cliente",
-            $"¿Seguro que querés eliminar el cliente '{cliente.Nombre}'? Esta acción no se puede deshacer.",
+            $"¿Confirma que desea eliminar el cliente '{cliente.Nombre}'? Esta acción no se puede deshacer.",
             yesText: "Eliminar", cancelText: "Cancelar");
 
         if (confirmado != true)

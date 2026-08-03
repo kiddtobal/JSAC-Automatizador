@@ -39,7 +39,7 @@
         <MudItem xs="12" md="7">
             @if (categoriaSeleccionada is null)
             {
-                <MudText Typo="Typo.body1" Color="Color.Secondary">Seleccioná una categoría del árbol para ver su detalle.</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">Seleccione una categoría del árbol para ver su detalle.</MudText>
             }
             else
             {
@@ -347,7 +347,7 @@
 
         var confirmado = await DialogService.ShowMessageBoxAsync(
             "Eliminar categoría",
-            $"¿Seguro que querés eliminar la categoría '{categoriaSeleccionada.Nombre}'? Esta acción no se puede deshacer.",
+            $"¿Confirma que desea eliminar la categoría '{categoriaSeleccionada.Nombre}'? Esta acción no se puede deshacer.",
             yesText: "Eliminar", cancelText: "Cancelar");
 
         if (confirmado != true)
@@ -569,7 +569,7 @@
     {
         var confirmado = await DialogService.ShowMessageBoxAsync(
             "Eliminar precio de referencia",
-            $"¿Seguro que querés eliminar el precio de '{precio.Proveedor}' ({precio.Precio:C})? Esta acción no se puede deshacer.",
+            $"¿Confirma que desea eliminar el precio de '{precio.Proveedor}' ({precio.Precio:C})? Esta acción no se puede deshacer.",
             yesText: "Eliminar", cancelText: "Cancelar");
 
         if (confirmado != true)
@@ -588,7 +588,7 @@
     {
         var confirmado = await DialogService.ShowMessageBoxAsync(
             "Eliminar producto",
-            $"¿Seguro que querés eliminar el producto '{producto.Nombre}'? Esta acción no se puede deshacer.",
+            $"¿Confirma que desea eliminar el producto '{producto.Nombre}'? Esta acción no se puede deshacer.",
             yesText: "Eliminar", cancelText: "Cancelar");
 
         if (confirmado != true)

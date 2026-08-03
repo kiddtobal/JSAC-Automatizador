@@ -263,7 +263,7 @@
     {
         var confirmado = await DialogService.ShowMessageBoxAsync(
             "Eliminar cotizador",
-            $"¿Seguro que querés eliminar el cotizador '{cotizador.Nombre}'? Esta acción no se puede deshacer.",
+            $"¿Confirma que desea eliminar el cotizador '{cotizador.Nombre}'? Esta acción no se puede deshacer.",
             yesText: "Eliminar", cancelText: "Cancelar");
 
         if (confirmado != true)

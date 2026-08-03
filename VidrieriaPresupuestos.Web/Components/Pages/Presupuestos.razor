@@ -102,7 +102,7 @@
     {
         var confirmado = await DialogService.ShowMessageBoxAsync(
             "Eliminar presupuesto",
-            $"¿Seguro que querés eliminar el presupuesto de '{presupuesto.Cliente.Nombre}' del {presupuesto.Fecha:dd/MM/yyyy}? Esta acción no se puede deshacer.",
+            $"¿Confirma que desea eliminar el presupuesto de '{presupuesto.Cliente.Nombre}' del {presupuesto.Fecha:dd/MM/yyyy}? Esta acción no se puede deshacer.",
             yesText: "Eliminar", cancelText: "Cancelar");
 
         if (confirmado != true)
