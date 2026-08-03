@@ -9,7 +9,7 @@
 <MudPaper Class="pa-4 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudText Typo="Typo.h5">Categorías</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirDialogoNuevaCategoria(null))">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirDialogoNuevaCategoria">
             Nueva Categoría
         </MudButton>
     </MudStack>
@@ -47,12 +47,6 @@
                     <MudTextField @bind-Value="nombreEdicion" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" />
                     <MudStack Row="true" Class="mt-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarNombreCategoria">Guardar Cambios</MudButton>
-                        @if (categoriaSeleccionada.CategoriaPadreId is null)
-                        {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirDialogoNuevaCategoria(categoriaSeleccionada.Id))">
-                                Nueva Subcategoría
-                            </MudButton>
-                        }
                         <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="EliminarCategoria">Eliminar Categoría</MudButton>
                     </MudStack>
 
@@ -289,18 +283,17 @@
         };
     }
 
-    private async Task AbrirDialogoNuevaCategoria(int? categoriaPadreId)
+    private async Task AbrirDialogoNuevaCategoria()
     {
-        var titulo = categoriaPadreId is null ? "Nueva Categoría" : "Nueva Subcategoría";
-        var dialog = await DialogService.ShowAsync<NuevaCategoriaDialog>(titulo);
+        var dialog = await DialogService.ShowAsync<NuevaCategoriaDialog>("Nueva Categoría");
         var resultado = await dialog.Result;
 
         if (resultado is not null && !resultado.Canceled && resultado.Data is string nombre && !string.IsNullOrWhiteSpace(nombre))
         {
-            Context.Categorias.Add(new Categoria { Nombre = nombre, CategoriaPadreId = categoriaPadreId });
+            Context.Categorias.Add(new Categoria { Nombre = nombre, CategoriaPadreId = null });
             await Context.SaveChangesAsync();
 
-            Snackbar.Add(categoriaPadreId is null ? "Categoría creada" : "Subcategoría creada", Severity.Success);
+            Snackbar.Add("Categoría creada", Severity.Success);
             await CargarCategorias();
         }
     }
