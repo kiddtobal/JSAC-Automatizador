@@ -18,6 +18,7 @@ namespace VidrieriaPresupuestos.Web.Data
         public DbSet<ProductoCatalogo> ProductosCatalogo { get; set; } = null!;
         public DbSet<ProductoPrecioReferencia> PreciosReferencia { get; set; } = null!;
         public DbSet<Cotizador> Cotizadores { get; set; } = null!;
+        public DbSet<RecordatorioSistema> RecordatoriosSistema { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

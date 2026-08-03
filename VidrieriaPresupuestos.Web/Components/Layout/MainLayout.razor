@@ -1,4 +1,5 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject VidrieriaContext Context
 
 <MudAppBar Fixed="true" Elevation="2">
     <MudStack Spacing="0" Justify="Justify.Center">
@@ -13,6 +14,13 @@
     </div>
 
     <main>
+        @if (mostrarRecordatorio)
+        {
+            <MudAlert Severity="Severity.Info" Square="true" ShowCloseIcon="true" CloseIconClicked="CerrarRecordatorio">
+                Recordatorio: revisá el stock de tus productos y confirmá que los precios estén actualizados.
+            </MudAlert>
+        }
+
         <div class="top-row px-4">
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
@@ -28,3 +36,41 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private const string ClaveRecordatorioStock = "RevisionStockPrecios";
+
+    private bool mostrarRecordatorio;
+    private RecordatorioSistema? registroRecordatorio;
+
+    protected override async Task OnInitializedAsync()
+    {
+        registroRecordatorio = await Context.RecordatoriosSistema
+            .FirstOrDefaultAsync(r => r.Clave == ClaveRecordatorioStock);
+
+        mostrarRecordatorio = registroRecordatorio is null
+            || registroRecordatorio.UltimaVezMostrado is null
+            || (DateTime.Today - registroRecordatorio.UltimaVezMostrado.Value.Date).TotalDays >= 15;
+    }
+
+    private async Task CerrarRecordatorio()
+    {
+        mostrarRecordatorio = false;
+
+        if (registroRecordatorio is null)
+        {
+            registroRecordatorio = new RecordatorioSistema
+            {
+                Clave = ClaveRecordatorioStock,
+                UltimaVezMostrado = DateTime.Today
+            };
+            Context.RecordatoriosSistema.Add(registroRecordatorio);
+        }
+        else
+        {
+            registroRecordatorio.UltimaVezMostrado = DateTime.Today;
+        }
+
+        await Context.SaveChangesAsync();
+    }
+}
