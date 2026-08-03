@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @inject VidrieriaContext Context
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Rimalto - Presupuestos</PageTitle>
 
@@ -47,6 +49,7 @@
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Visibility" OnClick="@(() => VerDetalle(context))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => VerDetalle(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarPresupuesto(context))" />
                 </MudStack>
             </MudTd>
         </RowTemplate>
@@ -93,5 +96,38 @@
     private void VerDetalle(Presupuesto presupuesto)
     {
         NavigationManager.NavigateTo($"/presupuestos/{presupuesto.Id}");
+    }
+
+    private async Task EliminarPresupuesto(Presupuesto presupuesto)
+    {
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar presupuesto",
+            $"¿Seguro que querés eliminar el presupuesto de '{presupuesto.Cliente.Nombre}' del {presupuesto.Fecha:dd/MM/yyyy}? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true)
+        {
+            return;
+        }
+
+        try
+        {
+            Context.Presupuestos.Remove(presupuesto);
+            await Context.SaveChangesAsync();
+
+            presupuestos.Remove(presupuesto);
+            AplicarFiltros();
+            Snackbar.Add("Presupuesto eliminado", Severity.Success);
+        }
+        catch (DbUpdateException)
+        {
+            Context.Entry(presupuesto).State = EntityState.Unchanged;
+            Snackbar.Add("No se pudo eliminar el presupuesto.", Severity.Error);
+        }
+        catch (InvalidOperationException)
+        {
+            Context.Entry(presupuesto).State = EntityState.Unchanged;
+            Snackbar.Add("No se pudo eliminar el presupuesto.", Severity.Error);
+        }
     }
 }

@@ -143,11 +143,24 @@
     </MudExpansionPanel>
 
     <MudExpansionPanel Text="@($"Mano de Obra ({SubtotalManoDeObra:C})")" IsInitiallyExpanded="true">
-        <MudPaper Outlined="true" Class="pa-2 mb-3">
-            <SelectorProductoCatalogo Categorias="categoriasOrdenadas" Productos="productos" @bind-PrecioSeleccionado="productoSeleccionadoManoDeObra" />
+        <MudPaper Outlined="true" Class="pa-3 mb-3">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string" @bind-Value="tipoManoDeObra" Label="Tipo de Mano de Obra">
+                        <MudSelectItem T="string" Value="@("Mano de obra")">Mano de obra</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Mano de obra fuera de horario")">Mano de obra fuera de horario</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudNumericField T="int" @bind-Value="cantidadManoDeObra" Label="Cantidad" Immediate="true" Min="1" />
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudNumericField T="decimal" @bind-Value="valorUnitManoDeObra" Label="Valor Unit." Immediate="true" Min="0" Format="F0" />
+                </MudItem>
+            </MudGrid>
         </MudPaper>
         <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(productoSeleccionadoManoDeObra is null)" OnClick="AgregarManoDeObraDesdeProducto">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(string.IsNullOrWhiteSpace(tipoManoDeObra))" OnClick="AgregarManoDeObraManual">
                 Agregar
             </MudButton>
         </MudStack>
@@ -303,7 +316,9 @@
     private List<ProductoCatalogo> productos = new();
 
     private ProductoPrecioReferencia? productoSeleccionadoMaterial;
-    private ProductoPrecioReferencia? productoSeleccionadoManoDeObra;
+    private string? tipoManoDeObra;
+    private int cantidadManoDeObra = 1;
+    private decimal valorUnitManoDeObra;
 
     private IEnumerable<ItemPresupuesto> ItemsMateriales => items.Where(i => i.Seccion == SeccionItem.Materiales);
     private IEnumerable<ItemPresupuesto> ItemsManoDeObra => items.Where(i => i.Seccion == SeccionItem.ManoDeObra);
@@ -371,7 +386,7 @@
     {
         cargos = new List<CargoAdicional>
         {
-            new() { Nombre = "Utilidad", TipoValor = TipoValorCargo.Porcentaje, Valor = 20, CalcularSoloSobreInventario = true },
+            new() { Nombre = "Utilidad", TipoValor = TipoValorCargo.Porcentaje, Valor = 20 },
             new() { Nombre = "Gastos Generales", TipoValor = TipoValorCargo.Porcentaje, Valor = 10 },
             new() { Nombre = "Fletes", TipoValor = TipoValorCargo.MontoFijo, Valor = 0, Cantidad = 1, Unidad = "u." },
             new() { Nombre = "Viáticos y estadía", TipoValor = TipoValorCargo.MontoFijo, Valor = 0, Cantidad = 1, Unidad = "u." }
@@ -409,34 +424,33 @@
         productoSeleccionadoMaterial = null;
     }
 
-    private void AgregarManoDeObraDesdeProducto()
+    private void AgregarManoDeObraManual()
     {
-        if (productoSeleccionadoManoDeObra is null)
+        if (string.IsNullOrWhiteSpace(tipoManoDeObra))
         {
-            Snackbar.Add("Elegí un precio de referencia", Severity.Error);
+            Snackbar.Add("Elegí el tipo de mano de obra", Severity.Error);
             return;
         }
-
-        var producto = productoSeleccionadoManoDeObra.ProductoCatalogo;
 
         var item = new ItemPresupuesto
         {
             Seccion = SeccionItem.ManoDeObra,
-            Descripcion = producto.Nombre,
-            Categoria = producto.Categoria.Nombre,
-            Unidad = producto.Unidad,
-            Origen = producto.Origen,
-            PrecioBase = productoSeleccionadoManoDeObra.Precio,
-            PorcentajeComision = producto.PorcentajeComision,
-            UrlReferencia = productoSeleccionadoManoDeObra.UrlReferencia,
-            Cantidad = 1
+            Descripcion = tipoManoDeObra,
+            Categoria = null,
+            Origen = OrigenItem.Inventario,
+            Unidad = "u.",
+            PrecioBase = valorUnitManoDeObra,
+            PorcentajeComision = 0,
+            Cantidad = cantidadManoDeObra
         };
 
         items.Add(item);
         RecalcularItem(item);
         itemsExpandido.Add(item);
 
-        productoSeleccionadoManoDeObra = null;
+        tipoManoDeObra = null;
+        cantidadManoDeObra = 1;
+        valorUnitManoDeObra = 0;
     }
 
     private void EliminarItem(ItemPresupuesto item)

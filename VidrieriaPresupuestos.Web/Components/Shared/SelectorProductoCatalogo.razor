@@ -1,23 +1,26 @@
+<MudTextField T="string" @bind-Value="busqueda" @bind-Value:after="OnBusquedaCambiada"
+              Label="Buscar producto o categoría" Immediate="true" Class="mb-2" />
+
 <MudList T="object" Clickable="true" Dense="true">
-    @foreach (var raiz in categoriasPorPadre[null].OrderBy(c => c.Nombre))
+    @foreach (var raiz in categoriasPorPadre[null].Where(CategoriaVisible).OrderBy(c => c.Nombre))
     {
         <MudListItem T="object" OnClick="@(() => AlternarCategoriaExpandida(raiz.Id))"
-                     Icon="@(EstaCategoriaExpandida(raiz.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                     Icon="@(EstaCategoriaExpandida(raiz) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
             @raiz.Nombre
         </MudListItem>
 
-        @if (EstaCategoriaExpandida(raiz.Id))
+        @if (EstaCategoriaExpandida(raiz))
         {
-            @foreach (var sub in categoriasPorPadre[raiz.Id].OrderBy(c => c.Nombre))
+            @foreach (var sub in categoriasPorPadre[raiz.Id].Where(CategoriaVisible).OrderBy(c => c.Nombre))
             {
                 <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarCategoriaExpandida(sub.Id))"
-                             Icon="@(EstaCategoriaExpandida(sub.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                             Icon="@(EstaCategoriaExpandida(sub) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
                     @sub.Nombre
                 </MudListItem>
 
-                @if (EstaCategoriaExpandida(sub.Id))
+                @if (EstaCategoriaExpandida(sub))
                 {
-                    @foreach (var prod in productosPorCategoria[sub.Id].OrderBy(p => p.Nombre))
+                    @foreach (var prod in ProductosVisibles(sub.Id, CategoriaNombreCoincide(sub)).OrderBy(p => p.Nombre))
                     {
                         <MudListItem T="object" Class="ml-10" OnClick="@(() => AlternarProductoExpandido(prod.Id))"
                                      Icon="@(EstaProductoExpandido(prod.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
@@ -43,7 +46,7 @@
                 }
             }
 
-            @foreach (var prod in productosPorCategoria[raiz.Id].OrderBy(p => p.Nombre))
+            @foreach (var prod in ProductosVisibles(raiz.Id, CategoriaNombreCoincide(raiz)).OrderBy(p => p.Nombre))
             {
                 <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarProductoExpandido(prod.Id))"
                              Icon="@(EstaProductoExpandido(prod.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
@@ -83,6 +86,7 @@
     [Parameter]
     public EventCallback<ProductoPrecioReferencia?> PrecioSeleccionadoChanged { get; set; }
 
+    private string busqueda = "";
     private HashSet<int> categoriasExpandidas = new();
     private HashSet<int> productosExpandidos = new();
 
@@ -95,7 +99,45 @@
         productosPorCategoria = Productos.ToLookup(p => p.CategoriaId);
     }
 
-    private bool EstaCategoriaExpandida(int categoriaId) => categoriasExpandidas.Contains(categoriaId);
+    private void OnBusquedaCambiada()
+    {
+    }
+
+    private bool HayBusqueda => !string.IsNullOrWhiteSpace(busqueda);
+
+    private bool ProductoCoincide(ProductoCatalogo producto) =>
+        producto.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase);
+
+    private bool CategoriaNombreCoincide(Categoria categoria) =>
+        categoria.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase);
+
+    private bool CategoriaVisible(Categoria categoria) =>
+        !HayBusqueda
+        || CategoriaNombreCoincide(categoria)
+        || productosPorCategoria[categoria.Id].Any(ProductoCoincide)
+        || categoriasPorPadre[categoria.Id].Any(CategoriaVisible);
+
+    private IEnumerable<ProductoCatalogo> ProductosVisibles(int categoriaId, bool nombreCategoriaCoincide)
+    {
+        var productos = productosPorCategoria[categoriaId];
+
+        if (!HayBusqueda || nombreCategoriaCoincide)
+        {
+            return productos;
+        }
+
+        return productos.Where(ProductoCoincide);
+    }
+
+    private bool EstaCategoriaExpandida(Categoria categoria)
+    {
+        if (HayBusqueda)
+        {
+            return CategoriaVisible(categoria);
+        }
+
+        return categoriasExpandidas.Contains(categoria.Id);
+    }
 
     private void AlternarCategoriaExpandida(int categoriaId)
     {
@@ -105,7 +147,15 @@
         }
     }
 
-    private bool EstaProductoExpandido(int productoId) => productosExpandidos.Contains(productoId);
+    private bool EstaProductoExpandido(int productoId)
+    {
+        if (HayBusqueda)
+        {
+            return true;
+        }
+
+        return productosExpandidos.Contains(productoId);
+    }
 
     private void AlternarProductoExpandido(int productoId)
     {
