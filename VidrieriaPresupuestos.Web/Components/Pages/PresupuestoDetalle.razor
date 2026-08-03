@@ -168,6 +168,7 @@ else if (presupuesto is not null)
     {
         presupuesto = await Context.Presupuestos
             .Include(p => p.Cliente)
+            .Include(p => p.Cotizador)
             .Include(p => p.Items)
             .Include(p => p.CargosAdicionales)
             .FirstOrDefaultAsync(p => p.Id == Id);
