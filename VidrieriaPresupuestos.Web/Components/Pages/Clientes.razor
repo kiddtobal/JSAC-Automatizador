@@ -78,6 +78,7 @@
     {
         @foreach (var cliente in clientes)
         {
+            <div @key="cliente.Id">
             @if (EstaClienteExpandido(cliente))
             {
                 <MudPaper Outlined="true" Class="pa-3 mb-2">
@@ -108,9 +109,8 @@
                     </MudGrid>
 
                     <MudStack Row="true" Class="mt-2">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GuardarCambiosCliente(cliente))">Guardar Cambios</MudButton>
-                        <MudButton Variant="Variant.Text" OnClick="@(() => AlternarClienteExpandido(cliente))">Listo</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => EliminarCliente(cliente))">Eliminar Cliente</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!HayCambios(cliente))" OnClick="@(() => GuardarCambiosCliente(cliente))">Guardar Cambios</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@(() => CancelarEdicionCliente(cliente))">Cancelar</MudButton>
                     </MudStack>
                 </MudPaper>
             }
@@ -131,6 +131,7 @@
                     </MudStack>
                 </MudPaper>
             }
+            </div>
         }
     }
 </MudPaper>
@@ -142,6 +143,7 @@
     private bool mostrarFormulario;
     private bool cargando = true;
     private HashSet<int> clientesExpandido = new();
+    private Dictionary<int, Cliente> snapshotsClientes = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -188,8 +190,62 @@
     {
         if (!clientesExpandido.Add(cliente.Id))
         {
+            if (HayCambios(cliente))
+            {
+                RevertirCliente(cliente);
+            }
+
             clientesExpandido.Remove(cliente.Id);
+            snapshotsClientes.Remove(cliente.Id);
         }
+        else
+        {
+            snapshotsClientes[cliente.Id] = ClonarCliente(cliente);
+        }
+    }
+
+    private static Cliente ClonarCliente(Cliente c) => new()
+    {
+        Id = c.Id,
+        Nombre = c.Nombre,
+        Telefono = c.Telefono,
+        Email = c.Email,
+        Genero = c.Genero,
+        Cargo = c.Cargo,
+        Empresa = c.Empresa
+    };
+
+    private bool HayCambios(Cliente cliente)
+    {
+        if (!snapshotsClientes.TryGetValue(cliente.Id, out var original))
+        {
+            return false;
+        }
+
+        return cliente.Nombre != original.Nombre
+            || cliente.Telefono != original.Telefono
+            || cliente.Email != original.Email
+            || cliente.Genero != original.Genero
+            || cliente.Cargo != original.Cargo
+            || cliente.Empresa != original.Empresa;
+    }
+
+    private void RevertirCliente(Cliente cliente)
+    {
+        var original = snapshotsClientes[cliente.Id];
+        cliente.Nombre = original.Nombre;
+        cliente.Telefono = original.Telefono;
+        cliente.Email = original.Email;
+        cliente.Genero = original.Genero;
+        cliente.Cargo = original.Cargo;
+        cliente.Empresa = original.Empresa;
+    }
+
+    private void CancelarEdicionCliente(Cliente cliente)
+    {
+        RevertirCliente(cliente);
+        clientesExpandido.Remove(cliente.Id);
+        snapshotsClientes.Remove(cliente.Id);
     }
 
     private string TextoResumenCliente(Cliente cliente)
@@ -231,6 +287,9 @@
 
         await Context.SaveChangesAsync();
         Snackbar.Add("Cliente actualizado", Severity.Success);
+
+        clientesExpandido.Remove(cliente.Id);
+        snapshotsClientes.Remove(cliente.Id);
     }
 
     private async Task EliminarCliente(Cliente cliente)
@@ -252,6 +311,7 @@
 
             clientes.Remove(cliente);
             clientesExpandido.Remove(cliente.Id);
+            snapshotsClientes.Remove(cliente.Id);
             Snackbar.Add("Cliente eliminado", Severity.Success);
         }
         catch (DbUpdateException)

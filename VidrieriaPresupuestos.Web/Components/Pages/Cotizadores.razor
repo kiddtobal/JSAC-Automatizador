@@ -72,6 +72,7 @@
     {
         @foreach (var cotizador in cotizadores)
         {
+            <div @key="cotizador.Id">
             @if (EstaCotizadorExpandido(cotizador))
             {
                 <MudPaper Outlined="true" Class="pa-3 mb-2">
@@ -91,9 +92,8 @@
                     </MudGrid>
 
                     <MudStack Row="true" Class="mt-2">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GuardarCambiosCotizador(cotizador))">Guardar Cambios</MudButton>
-                        <MudButton Variant="Variant.Text" OnClick="@(() => AlternarCotizadorExpandido(cotizador))">Listo</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => EliminarCotizador(cotizador))">Eliminar Cotizador</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!HayCambios(cotizador))" OnClick="@(() => GuardarCambiosCotizador(cotizador))">Guardar Cambios</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@(() => CancelarEdicionCotizador(cotizador))">Cancelar</MudButton>
                     </MudStack>
                 </MudPaper>
             }
@@ -114,6 +114,7 @@
                     </MudStack>
                 </MudPaper>
             }
+            </div>
         }
     }
 </MudPaper>
@@ -125,6 +126,7 @@
     private bool mostrarFormulario;
     private bool cargando = true;
     private HashSet<int> cotizadoresExpandido = new();
+    private Dictionary<int, Cotizador> snapshotsCotizadores = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -173,8 +175,56 @@
     {
         if (!cotizadoresExpandido.Add(cotizador.Id))
         {
+            if (HayCambios(cotizador))
+            {
+                RevertirCotizador(cotizador);
+            }
+
             cotizadoresExpandido.Remove(cotizador.Id);
+            snapshotsCotizadores.Remove(cotizador.Id);
         }
+        else
+        {
+            snapshotsCotizadores[cotizador.Id] = ClonarCotizador(cotizador);
+        }
+    }
+
+    private static Cotizador ClonarCotizador(Cotizador c) => new()
+    {
+        Id = c.Id,
+        Nombre = c.Nombre,
+        Cargo = c.Cargo,
+        Celular = c.Celular,
+        Email = c.Email
+    };
+
+    private bool HayCambios(Cotizador cotizador)
+    {
+        if (!snapshotsCotizadores.TryGetValue(cotizador.Id, out var original))
+        {
+            return false;
+        }
+
+        return cotizador.Nombre != original.Nombre
+            || cotizador.Cargo != original.Cargo
+            || cotizador.Celular != original.Celular
+            || cotizador.Email != original.Email;
+    }
+
+    private void RevertirCotizador(Cotizador cotizador)
+    {
+        var original = snapshotsCotizadores[cotizador.Id];
+        cotizador.Nombre = original.Nombre;
+        cotizador.Cargo = original.Cargo;
+        cotizador.Celular = original.Celular;
+        cotizador.Email = original.Email;
+    }
+
+    private void CancelarEdicionCotizador(Cotizador cotizador)
+    {
+        RevertirCotizador(cotizador);
+        cotizadoresExpandido.Remove(cotizador.Id);
+        snapshotsCotizadores.Remove(cotizador.Id);
     }
 
     private string TextoResumenCotizador(Cotizador cotizador)
@@ -204,6 +254,9 @@
 
         await Context.SaveChangesAsync();
         Snackbar.Add("Cotizador actualizado", Severity.Success);
+
+        cotizadoresExpandido.Remove(cotizador.Id);
+        snapshotsCotizadores.Remove(cotizador.Id);
     }
 
     private async Task EliminarCotizador(Cotizador cotizador)
@@ -225,6 +278,7 @@
 
             cotizadores.Remove(cotizador);
             cotizadoresExpandido.Remove(cotizador.Id);
+            snapshotsCotizadores.Remove(cotizador.Id);
             Snackbar.Add("Cotizador eliminado", Severity.Success);
         }
         catch (DbUpdateException)
