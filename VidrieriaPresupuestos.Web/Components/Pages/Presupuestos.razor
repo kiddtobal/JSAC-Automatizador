@@ -48,7 +48,7 @@
             <MudTd>
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Visibility" OnClick="@(() => VerDetalle(context))" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => VerDetalle(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditarPresupuesto(context))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarPresupuesto(context))" />
                 </MudStack>
             </MudTd>
@@ -96,6 +96,11 @@
     private void VerDetalle(Presupuesto presupuesto)
     {
         NavigationManager.NavigateTo($"/presupuestos/{presupuesto.Id}");
+    }
+
+    private void EditarPresupuesto(Presupuesto presupuesto)
+    {
+        NavigationManager.NavigateTo($"/presupuestos/{presupuesto.Id}/editar");
     }
 
     private async Task EliminarPresupuesto(Presupuesto presupuesto)

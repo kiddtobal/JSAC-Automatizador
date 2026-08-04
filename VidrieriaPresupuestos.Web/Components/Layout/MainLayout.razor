@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject VidrieriaContext Context
+@inject IJSRuntime JS
 
 <MudAppBar Fixed="true" Elevation="2">
     <MudStack Spacing="0" Justify="Justify.Center">
@@ -22,7 +23,7 @@
         }
 
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <MudLink Href="docs/Manual_Rimalto.pdf" Target="_blank">Manual de uso</MudLink>
         </div>
 
         <article class="content px-4">
@@ -31,7 +32,7 @@
     </main>
 </div>
 
-<footer class="app-footer">
+<footer class="app-footer" @ref="footerRef">
     <MudText Typo="Typo.caption" Color="Color.Secondary">
         Designed by <MudLink Href="https://www.linkedin.com/in/cristobal-iribarren-rojas/" Target="_blank" Color="Color.Secondary">CIR</MudLink>
     </MudText>
@@ -48,6 +49,7 @@
 
     private bool mostrarRecordatorio;
     private RecordatorioSistema? registroRecordatorio;
+    private ElementReference footerRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -57,6 +59,14 @@
         mostrarRecordatorio = registroRecordatorio is null
             || registroRecordatorio.UltimaVezMostrado is null
             || (DateTime.Today - registroRecordatorio.UltimaVezMostrado.Value.Date).TotalDays >= 15;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("observarAlturaFooter", footerRef);
+        }
     }
 
     private async Task CerrarRecordatorio()

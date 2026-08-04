@@ -1,7 +1,3 @@
-:root {
-    --app-footer-height: 44px;
-}
-
 .page {
     position: relative;
     display: flex;
@@ -14,16 +10,17 @@ main {
 }
 
 .content {
-    padding-bottom: var(--app-footer-height);
+    padding-bottom: var(--app-footer-height, 56px);
 }
 
 .app-footer {
+    box-sizing: border-box;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    height: var(--app-footer-height);
+    height: var(--app-footer-height, 56px);
     display: flex;
     align-items: center;
     justify-content: center;

@@ -1,12 +1,14 @@
 @page "/presupuestos/nuevo"
+@page "/presupuestos/{Id:int}/editar"
 @rendermode InteractiveServer
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
-<PageTitle>Rimalto - Nuevo Presupuesto</PageTitle>
+<PageTitle>@(Id.HasValue ? "Rimalto - Editar Presupuesto" : "Rimalto - Nuevo Presupuesto")</PageTitle>
 
 <MudPaper Class="pa-4 mb-4">
-    <MudText Typo="Typo.h5" Class="mb-4">Nuevo Presupuesto</MudText>
+    <MudText Typo="Typo.h5" Class="mb-4">@(Id.HasValue ? "Editar Presupuesto" : "Nuevo Presupuesto")</MudText>
 
     <MudGrid>
         <MudItem xs="12" md="6">
@@ -290,11 +292,19 @@
 
 <MudStack Row="true">
     <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" OnClick="GuardarPresupuesto">
-        Guardar Presupuesto
+        @(Id.HasValue ? "Guardar Cambios" : "Guardar Presupuesto")
     </MudButton>
 </MudStack>
 
 @code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Presupuesto? presupuestoExistente;
+    private List<ItemPresupuesto> itemsOriginales = new();
+    private List<CargoAdicional> cargosOriginales = new();
+    private bool cargosPorDefectoCreados;
+
     private List<Cliente> clientes = new();
     private Cliente? clienteSeleccionado;
     private string? busquedaCliente;
@@ -338,8 +348,55 @@
         categoriasOrdenadas = OrdenarCategoriasJerarquico(todasCategorias);
 
         productos = await Context.ProductosCatalogo.Include(p => p.Categoria).Include(p => p.PreciosReferencia).OrderBy(p => p.Nombre).ToListAsync();
+    }
 
-        CrearCargosPorDefecto();
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id.HasValue)
+        {
+            if (presupuestoExistente is null || presupuestoExistente.Id != Id.Value)
+            {
+                await CargarPresupuestoExistente(Id.Value);
+            }
+        }
+        else if (!cargosPorDefectoCreados)
+        {
+            CrearCargosPorDefecto();
+            cargosPorDefectoCreados = true;
+        }
+    }
+
+    private async Task CargarPresupuestoExistente(int id)
+    {
+        presupuestoExistente = await Context.Presupuestos
+            .Include(p => p.Cliente)
+            .Include(p => p.Cotizador)
+            .Include(p => p.Items)
+            .Include(p => p.CargosAdicionales)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (presupuestoExistente is null)
+        {
+            Snackbar.Add("Presupuesto no encontrado", Severity.Error);
+            NavigationManager.NavigateTo("/presupuestos");
+            return;
+        }
+
+        clienteSeleccionado = presupuestoExistente.Cliente;
+        busquedaCliente = presupuestoExistente.Cliente.Nombre;
+        fecha = presupuestoExistente.Fecha;
+        cotizadorSeleccionado = presupuestoExistente.Cotizador;
+        referencia = presupuestoExistente.Referencia;
+        local = presupuestoExistente.Local;
+        direccionTrabajo = presupuestoExistente.DireccionTrabajo;
+        comuna = presupuestoExistente.Comuna;
+        descripcionTrabajo = presupuestoExistente.DescripcionTrabajo;
+
+        items = presupuestoExistente.Items.ToList();
+        cargos = presupuestoExistente.CargosAdicionales.ToList();
+        itemsOriginales = presupuestoExistente.Items.ToList();
+        cargosOriginales = presupuestoExistente.CargosAdicionales.ToList();
+        itemsExpandido = new();
     }
 
     private List<Categoria> OrdenarCategoriasJerarquico(List<Categoria> todas) =>
@@ -446,7 +503,6 @@
 
         items.Add(item);
         RecalcularItem(item);
-        itemsExpandido.Add(item);
 
         tipoManoDeObra = null;
         cantidadManoDeObra = 1;
@@ -559,6 +615,48 @@
                 Snackbar.Add($"El ítem '{etiqueta}' tiene una URL de referencia con formato inválido", Severity.Error);
                 return;
             }
+        }
+
+        if (Id.HasValue && presupuestoExistente is not null)
+        {
+            var itemsAEliminar = itemsOriginales.Where(oi => !items.Contains(oi)).ToList();
+            Context.ItemsPresupuesto.RemoveRange(itemsAEliminar);
+
+            var itemsNuevos = items.Where(i => i.Id == 0).ToList();
+            foreach (var item in itemsNuevos)
+            {
+                item.PresupuestoId = presupuestoExistente.Id;
+            }
+            Context.ItemsPresupuesto.AddRange(itemsNuevos);
+
+            var cargosAEliminar = cargosOriginales.Where(oc => !cargos.Contains(oc)).ToList();
+            Context.CargosAdicionales.RemoveRange(cargosAEliminar);
+
+            var cargosNuevos = cargos.Where(c => c.Id == 0).ToList();
+            foreach (var cargo in cargosNuevos)
+            {
+                cargo.PresupuestoId = presupuestoExistente.Id;
+            }
+            Context.CargosAdicionales.AddRange(cargosNuevos);
+
+            presupuestoExistente.ClienteId = clienteSeleccionado.Id;
+            presupuestoExistente.Cliente = clienteSeleccionado;
+            presupuestoExistente.Fecha = fecha ?? DateTime.Today;
+            presupuestoExistente.CotizadorId = cotizadorSeleccionado.Id;
+            presupuestoExistente.Cotizador = cotizadorSeleccionado;
+            presupuestoExistente.Referencia = referencia;
+            presupuestoExistente.Local = local;
+            presupuestoExistente.DireccionTrabajo = direccionTrabajo;
+            presupuestoExistente.Comuna = comuna;
+            presupuestoExistente.DescripcionTrabajo = descripcionTrabajo;
+            presupuestoExistente.Subtotal = Subtotal;
+            presupuestoExistente.ValorNeto = ValorNeto;
+
+            await Context.SaveChangesAsync();
+
+            Snackbar.Add("Presupuesto actualizado correctamente", Severity.Success);
+            NavigationManager.NavigateTo($"/presupuestos/{presupuestoExistente.Id}");
+            return;
         }
 
         var presupuesto = new Presupuesto
