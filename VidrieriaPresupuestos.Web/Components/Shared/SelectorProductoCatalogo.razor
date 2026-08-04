@@ -1,0 +1,173 @@
+<MudTextField T="string" @bind-Value="busqueda" @bind-Value:after="OnBusquedaCambiada"
+              Label="Buscar producto o categoría" Immediate="true" Class="mb-2" />
+
+<MudList T="object" Clickable="true" Dense="true">
+    @foreach (var raiz in categoriasPorPadre[null].Where(CategoriaVisible).OrderBy(c => c.Nombre))
+    {
+        <MudListItem T="object" OnClick="@(() => AlternarCategoriaExpandida(raiz.Id))"
+                     Icon="@(EstaCategoriaExpandida(raiz) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+            @raiz.Nombre
+        </MudListItem>
+
+        @if (EstaCategoriaExpandida(raiz))
+        {
+            @foreach (var sub in categoriasPorPadre[raiz.Id].Where(CategoriaVisible).OrderBy(c => c.Nombre))
+            {
+                <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarCategoriaExpandida(sub.Id))"
+                             Icon="@(EstaCategoriaExpandida(sub) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                    @sub.Nombre
+                </MudListItem>
+
+                @if (EstaCategoriaExpandida(sub))
+                {
+                    @foreach (var prod in ProductosVisibles(sub.Id, CategoriaNombreCoincide(sub)).OrderBy(p => p.Nombre))
+                    {
+                        <MudListItem T="object" Class="ml-10" OnClick="@(() => AlternarProductoExpandido(prod.Id))"
+                                     Icon="@(EstaProductoExpandido(prod.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                            @prod.Nombre
+                        </MudListItem>
+
+                        @if (EstaProductoExpandido(prod.Id))
+                        {
+                            @foreach (var precio in prod.PreciosReferencia.OrderBy(p => p.Precio))
+                            {
+                                <MudListItem T="object" Class="ml-16"
+                                             Style="@(precio == PrecioSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
+                                             OnClick="@(() => SeleccionarPrecio(precio))">
+                                    @precio.Proveedor — @precio.Precio.ToString("C")
+                                    @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Class="ml-1" />
+                                    }
+                                </MudListItem>
+                            }
+                        }
+                    }
+                }
+            }
+
+            @foreach (var prod in ProductosVisibles(raiz.Id, CategoriaNombreCoincide(raiz)).OrderBy(p => p.Nombre))
+            {
+                <MudListItem T="object" Class="ml-6" OnClick="@(() => AlternarProductoExpandido(prod.Id))"
+                             Icon="@(EstaProductoExpandido(prod.Id) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)">
+                    @prod.Nombre
+                </MudListItem>
+
+                @if (EstaProductoExpandido(prod.Id))
+                {
+                    @foreach (var precio in prod.PreciosReferencia.OrderBy(p => p.Precio))
+                    {
+                        <MudListItem T="object" Class="ml-10"
+                                     Style="@(precio == PrecioSeleccionado ? "background-color: var(--mud-palette-primary-hover);" : null)"
+                                     OnClick="@(() => SeleccionarPrecio(precio))">
+                            @precio.Proveedor — @precio.Precio.ToString("C")
+                            @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Class="ml-1" />
+                            }
+                        </MudListItem>
+                    }
+                }
+            }
+        }
+    }
+</MudList>
+
+@code {
+    [Parameter]
+    public List<Categoria> Categorias { get; set; } = new();
+
+    [Parameter]
+    public List<ProductoCatalogo> Productos { get; set; } = new();
+
+    [Parameter]
+    public ProductoPrecioReferencia? PrecioSeleccionado { get; set; }
+
+    [Parameter]
+    public EventCallback<ProductoPrecioReferencia?> PrecioSeleccionadoChanged { get; set; }
+
+    private string busqueda = "";
+    private HashSet<int> categoriasExpandidas = new();
+    private HashSet<int> productosExpandidos = new();
+
+    private ILookup<int?, Categoria> categoriasPorPadre = Enumerable.Empty<Categoria>().ToLookup(c => c.CategoriaPadreId);
+    private ILookup<int, ProductoCatalogo> productosPorCategoria = Enumerable.Empty<ProductoCatalogo>().ToLookup(p => p.CategoriaId);
+
+    protected override void OnParametersSet()
+    {
+        categoriasPorPadre = Categorias.ToLookup(c => c.CategoriaPadreId);
+        productosPorCategoria = Productos.ToLookup(p => p.CategoriaId);
+    }
+
+    private void OnBusquedaCambiada()
+    {
+    }
+
+    private bool HayBusqueda => !string.IsNullOrWhiteSpace(busqueda);
+
+    private bool ProductoCoincide(ProductoCatalogo producto) =>
+        producto.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase);
+
+    private bool CategoriaNombreCoincide(Categoria categoria) =>
+        categoria.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase);
+
+    private bool CategoriaVisible(Categoria categoria) =>
+        !HayBusqueda
+        || CategoriaNombreCoincide(categoria)
+        || productosPorCategoria[categoria.Id].Any(ProductoCoincide)
+        || categoriasPorPadre[categoria.Id].Any(CategoriaVisible);
+
+    private IEnumerable<ProductoCatalogo> ProductosVisibles(int categoriaId, bool nombreCategoriaCoincide)
+    {
+        var productos = productosPorCategoria[categoriaId];
+
+        if (!HayBusqueda || nombreCategoriaCoincide)
+        {
+            return productos;
+        }
+
+        return productos.Where(ProductoCoincide);
+    }
+
+    private bool EstaCategoriaExpandida(Categoria categoria)
+    {
+        if (HayBusqueda)
+        {
+            return CategoriaVisible(categoria);
+        }
+
+        return categoriasExpandidas.Contains(categoria.Id);
+    }
+
+    private void AlternarCategoriaExpandida(int categoriaId)
+    {
+        if (!categoriasExpandidas.Add(categoriaId))
+        {
+            categoriasExpandidas.Remove(categoriaId);
+        }
+    }
+
+    private bool EstaProductoExpandido(int productoId)
+    {
+        if (HayBusqueda)
+        {
+            return true;
+        }
+
+        return productosExpandidos.Contains(productoId);
+    }
+
+    private void AlternarProductoExpandido(int productoId)
+    {
+        if (!productosExpandidos.Add(productoId))
+        {
+            productosExpandidos.Remove(productoId);
+        }
+    }
+
+    private async Task SeleccionarPrecio(ProductoPrecioReferencia precio)
+    {
+        PrecioSeleccionado = precio;
+        await PrecioSeleccionadoChanged.InvokeAsync(precio);
+    }
+}

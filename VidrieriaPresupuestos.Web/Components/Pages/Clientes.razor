@@ -1,0 +1,328 @@
+@page "/clientes"
+@rendermode InteractiveServer
+@inject VidrieriaContext Context
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using Microsoft.EntityFrameworkCore
+
+
+<PageTitle>JASC - Clientes</PageTitle>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h5">Clientes</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="MostrarFormulario">
+            Nuevo Cliente
+        </MudButton>
+    </MudStack>
+
+    @if (mostrarFormulario)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <MudForm @ref="form" Model="nuevoCliente" @onsubmit="GuardarCliente">
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Nombre"
+                                      Label="Nombre"
+                                      Required="true"
+                                      RequiredError="El nombre es obligatorio"
+                                      Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Telefono"
+                                      Label="Teléfono" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Email"
+                                      Label="Email" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="Genero" @bind-Value="nuevoCliente.Genero" Label="Género" Required="true" RequiredError="Debe seleccionar un género">
+                            @foreach (var genero in Enum.GetValues<Genero>())
+                            {
+                                <MudSelectItem T="Genero" Value="@genero">@genero</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Cargo"
+                                      Label="Cargo" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="nuevoCliente.Empresa"
+                                      Label="Empresa" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudStack Row="true" Class="mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                        Guardar
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="CancelarFormulario">
+                        Cancelar
+                    </MudButton>
+                </MudStack>
+            </MudForm>
+        </MudPaper>
+    }
+
+    @if (cargando)
+    {
+        <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    }
+    else if (clientes.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="pa-2">No hay clientes creados todavía.</MudText>
+    }
+    else
+    {
+        @foreach (var cliente in clientes)
+        {
+            <div @key="cliente.Id">
+            @if (EstaClienteExpandido(cliente))
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudGrid>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cliente.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cliente.Telefono" Label="Teléfono" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cliente.Email" Label="Email" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect T="Genero" @bind-Value="cliente.Genero" Label="Género">
+                                @foreach (var genero in Enum.GetValues<Genero>())
+                                {
+                                    <MudSelectItem T="Genero" Value="@genero">@genero</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cliente.Cargo" Label="Cargo" Immediate="true" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="cliente.Empresa" Label="Empresa" Immediate="true" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudStack Row="true" Class="mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!HayCambios(cliente))" OnClick="@(() => GuardarCambiosCliente(cliente))">Guardar Cambios</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@(() => CancelarEdicionCliente(cliente))">Cancelar</MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="pa-3 mb-2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <span>
+                            @cliente.Nombre
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:inline-block; margin-left:4px;">
+                                (@TextoResumenCliente(cliente))
+                            </MudText>
+                        </span>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => AlternarClienteExpandido(cliente))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminarCliente(cliente))" />
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
+            </div>
+        }
+    }
+</MudPaper>
+
+@code {
+    private List<Cliente> clientes = new();
+    private Cliente nuevoCliente = new();
+    private MudForm? form;
+    private bool mostrarFormulario;
+    private bool cargando = true;
+    private HashSet<int> clientesExpandido = new();
+    private Dictionary<int, Cliente> snapshotsClientes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarClientes();
+    }
+
+    private async Task CargarClientes()
+    {
+        cargando = true;
+        clientes = await Context.Clientes.OrderBy(c => c.Nombre).ToListAsync();
+        cargando = false;
+    }
+
+    private void MostrarFormulario()
+    {
+        nuevoCliente = new Cliente();
+        mostrarFormulario = true;
+    }
+
+    private void CancelarFormulario()
+    {
+        mostrarFormulario = false;
+        nuevoCliente = new Cliente();
+    }
+
+    private async Task GuardarCliente()
+    {
+        if (string.IsNullOrWhiteSpace(nuevoCliente.Nombre))
+        {
+            return;
+        }
+
+        Context.Clientes.Add(nuevoCliente);
+        await Context.SaveChangesAsync();
+
+        mostrarFormulario = false;
+        nuevoCliente = new Cliente();
+        await CargarClientes();
+    }
+
+    private bool EstaClienteExpandido(Cliente cliente) => clientesExpandido.Contains(cliente.Id);
+
+    private void AlternarClienteExpandido(Cliente cliente)
+    {
+        if (!clientesExpandido.Add(cliente.Id))
+        {
+            if (HayCambios(cliente))
+            {
+                RevertirCliente(cliente);
+            }
+
+            clientesExpandido.Remove(cliente.Id);
+            snapshotsClientes.Remove(cliente.Id);
+        }
+        else
+        {
+            snapshotsClientes[cliente.Id] = ClonarCliente(cliente);
+        }
+    }
+
+    private static Cliente ClonarCliente(Cliente c) => new()
+    {
+        Id = c.Id,
+        Nombre = c.Nombre,
+        Telefono = c.Telefono,
+        Email = c.Email,
+        Genero = c.Genero,
+        Cargo = c.Cargo,
+        Empresa = c.Empresa
+    };
+
+    private bool HayCambios(Cliente cliente)
+    {
+        if (!snapshotsClientes.TryGetValue(cliente.Id, out var original))
+        {
+            return false;
+        }
+
+        return cliente.Nombre != original.Nombre
+            || cliente.Telefono != original.Telefono
+            || cliente.Email != original.Email
+            || cliente.Genero != original.Genero
+            || cliente.Cargo != original.Cargo
+            || cliente.Empresa != original.Empresa;
+    }
+
+    private void RevertirCliente(Cliente cliente)
+    {
+        var original = snapshotsClientes[cliente.Id];
+        cliente.Nombre = original.Nombre;
+        cliente.Telefono = original.Telefono;
+        cliente.Email = original.Email;
+        cliente.Genero = original.Genero;
+        cliente.Cargo = original.Cargo;
+        cliente.Empresa = original.Empresa;
+    }
+
+    private void CancelarEdicionCliente(Cliente cliente)
+    {
+        RevertirCliente(cliente);
+        clientesExpandido.Remove(cliente.Id);
+        snapshotsClientes.Remove(cliente.Id);
+    }
+
+    private string TextoResumenCliente(Cliente cliente)
+    {
+        var partes = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(cliente.Telefono))
+        {
+            partes.Add(cliente.Telefono);
+        }
+
+        if (!string.IsNullOrWhiteSpace(cliente.Email))
+        {
+            partes.Add(cliente.Email);
+        }
+
+        partes.Add(cliente.Genero.ToString());
+
+        if (!string.IsNullOrWhiteSpace(cliente.Cargo))
+        {
+            partes.Add(cliente.Cargo);
+        }
+
+        if (!string.IsNullOrWhiteSpace(cliente.Empresa))
+        {
+            partes.Add(cliente.Empresa);
+        }
+
+        return string.Join(" · ", partes);
+    }
+
+    private async Task GuardarCambiosCliente(Cliente cliente)
+    {
+        if (string.IsNullOrWhiteSpace(cliente.Nombre))
+        {
+            Snackbar.Add("El nombre es obligatorio", Severity.Error);
+            return;
+        }
+
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Cliente actualizado", Severity.Success);
+
+        clientesExpandido.Remove(cliente.Id);
+        snapshotsClientes.Remove(cliente.Id);
+    }
+
+    private async Task EliminarCliente(Cliente cliente)
+    {
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar cliente",
+            $"¿Confirma que desea eliminar el cliente '{cliente.Nombre}'? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true)
+        {
+            return;
+        }
+
+        try
+        {
+            Context.Clientes.Remove(cliente);
+            await Context.SaveChangesAsync();
+
+            clientes.Remove(cliente);
+            clientesExpandido.Remove(cliente.Id);
+            snapshotsClientes.Remove(cliente.Id);
+            Snackbar.Add("Cliente eliminado", Severity.Success);
+        }
+        catch (DbUpdateException)
+        {
+            Context.Entry(cliente).State = EntityState.Unchanged;
+            Snackbar.Add("No se puede eliminar: tiene presupuestos asociados.", Severity.Error);
+        }
+        catch (InvalidOperationException)
+        {
+            Context.Entry(cliente).State = EntityState.Unchanged;
+            Snackbar.Add("No se puede eliminar: tiene presupuestos asociados.", Severity.Error);
+        }
+    }
+}

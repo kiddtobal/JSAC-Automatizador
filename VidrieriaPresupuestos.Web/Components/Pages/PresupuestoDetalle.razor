@@ -1,0 +1,198 @@
+@page "/presupuestos/{Id:int}"
+@rendermode InteractiveServer
+@inject VidrieriaContext Context
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject PresupuestoPdfService PdfService
+@inject IJSRuntime JS
+
+<PageTitle>JASC - Presupuesto</PageTitle>
+
+@if (presupuestoNoEncontrado)
+{
+    <MudAlert Severity="Severity.Error">Presupuesto no encontrado</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="Volver">Volver a la lista</MudButton>
+}
+else if (presupuesto is not null)
+{
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.h5" Class="mb-4">Presupuesto #@presupuesto.Id</MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle2">Cliente</MudText>
+                <MudText Typo="Typo.body1">@presupuesto.Cliente.Nombre</MudText>
+                @if (!string.IsNullOrWhiteSpace(presupuesto.Cliente.Telefono))
+                {
+                    <MudText Typo="Typo.body2">Tel: @presupuesto.Cliente.Telefono</MudText>
+                }
+                @if (!string.IsNullOrWhiteSpace(presupuesto.Cliente.Email))
+                {
+                    <MudText Typo="Typo.body2">Email: @presupuesto.Cliente.Email</MudText>
+                }
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudText Typo="Typo.subtitle2">Fecha</MudText>
+                <MudText Typo="Typo.body1">@presupuesto.Fecha.ToString("dd/MM/yyyy")</MudText>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudText Typo="Typo.subtitle2">Creado Por</MudText>
+                @* TODO: fix temporal - se reemplaza en la Fase B con el flujo real de selección de Cotizador *@
+                <MudText Typo="Typo.body1">@(presupuesto.Cotizador?.Nombre ?? "")</MudText>
+            </MudItem>
+            @if (!string.IsNullOrWhiteSpace(presupuesto.DescripcionTrabajo))
+            {
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle2">Descripción del Trabajo</MudText>
+                    <MudText Typo="Typo.body1">@presupuesto.DescripcionTrabajo</MudText>
+                </MudItem>
+            }
+            <MudItem xs="12" md="4">
+                <MudSelect T="EstadoPresupuesto" @bind-Value="presupuesto.Estado" @bind-Value:after="GuardarEstado" Label="Estado">
+                    @foreach (var estado in Enum.GetValues<EstadoPresupuesto>())
+                    {
+                        <MudSelectItem T="EstadoPresupuesto" Value="@estado">@estado</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudExpansionPanels MultiExpansion="true" Class="mb-4">
+        <MudExpansionPanel Text="Materiales" IsInitiallyExpanded="true">
+            <MudTable T="ItemPresupuesto" Items="ItemsMateriales" Hover="true">
+                <HeaderContent>
+                    <MudTh>Descripción</MudTh>
+                    <MudTh>Categoría</MudTh>
+                    <MudTh>Unidad</MudTh>
+                    <MudTh>Cantidad</MudTh>
+                    <MudTh>Valor Unitario</MudTh>
+                    <MudTh>Total</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Descripción">@context.Descripcion</MudTd>
+                    <MudTd DataLabel="Categoría">@context.Categoria</MudTd>
+                    <MudTd DataLabel="Unidad">@context.Unidad</MudTd>
+                    <MudTd DataLabel="Cantidad">@context.Cantidad</MudTd>
+                    <MudTd DataLabel="Valor Unitario">@context.ValorUnitario.ToString("C")</MudTd>
+                    <MudTd DataLabel="Total">@context.Total.ToString("C")</MudTd>
+                    <MudTd>
+                        @if (!string.IsNullOrWhiteSpace(context.UrlReferencia))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Link" Href="@context.UrlReferencia" Target="_blank" />
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText>Sin materiales.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Mano de Obra" IsInitiallyExpanded="true">
+            <MudTable T="ItemPresupuesto" Items="ItemsManoDeObra" Hover="true">
+                <HeaderContent>
+                    <MudTh>Descripción</MudTh>
+                    <MudTh>Categoría</MudTh>
+                    <MudTh>Unidad</MudTh>
+                    <MudTh>Cantidad</MudTh>
+                    <MudTh>Valor Unitario</MudTh>
+                    <MudTh>Total</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Descripción">@context.Descripcion</MudTd>
+                    <MudTd DataLabel="Categoría">@context.Categoria</MudTd>
+                    <MudTd DataLabel="Unidad">@context.Unidad</MudTd>
+                    <MudTd DataLabel="Cantidad">@context.Cantidad</MudTd>
+                    <MudTd DataLabel="Valor Unitario">@context.ValorUnitario.ToString("C")</MudTd>
+                    <MudTd DataLabel="Total">@context.Total.ToString("C")</MudTd>
+                    <MudTd>
+                        @if (!string.IsNullOrWhiteSpace(context.UrlReferencia))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Link" Href="@context.UrlReferencia" Target="_blank" />
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText>Sin mano de obra.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-2">Cargos Adicionales</MudText>
+        <MudTable T="CargoAdicional" Items="presupuesto.CargosAdicionales" Hover="true">
+            <HeaderContent>
+                <MudTh>Nombre</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Valor</MudTh>
+                <MudTh>Monto Calculado</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+                <MudTd DataLabel="Tipo">@context.TipoValor</MudTd>
+                <MudTd DataLabel="Valor">@(context.TipoValor == TipoValorCargo.Porcentaje ? $"{context.Valor}%" : context.Valor.ToString("C"))</MudTd>
+                <MudTd DataLabel="Monto Calculado">@context.MontoCalculado.ToString("C")</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>Sin cargos adicionales.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.h5">Subtotal: @presupuesto.Subtotal.ToString("C")</MudText>
+        <MudText Typo="Typo.h4" Color="Color.Primary">Valor Neto: @presupuesto.ValorNeto.ToString("C")</MudText>
+    </MudPaper>
+
+    <MudStack Row="true">
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Volver">Volver a la lista</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="DescargarPdf">Descargar PDF</MudButton>
+    </MudStack>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Presupuesto? presupuesto;
+    private bool presupuestoNoEncontrado;
+
+    private IEnumerable<ItemPresupuesto> ItemsMateriales => presupuesto!.Items.Where(i => i.Seccion == SeccionItem.Materiales);
+    private IEnumerable<ItemPresupuesto> ItemsManoDeObra => presupuesto!.Items.Where(i => i.Seccion == SeccionItem.ManoDeObra);
+
+    protected override async Task OnInitializedAsync()
+    {
+        presupuesto = await Context.Presupuestos
+            .Include(p => p.Cliente)
+            .Include(p => p.Cotizador)
+            .Include(p => p.Items)
+            .Include(p => p.CargosAdicionales)
+            .FirstOrDefaultAsync(p => p.Id == Id);
+
+        presupuestoNoEncontrado = presupuesto is null;
+    }
+
+    private async Task GuardarEstado()
+    {
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Estado actualizado", Severity.Success);
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/presupuestos");
+    }
+
+    private async Task DescargarPdf()
+    {
+        var bytes = PdfService.GenerarPdf(presupuesto!);
+        using var stream = new MemoryStream(bytes);
+        using var streamRef = new DotNetStreamReference(stream);
+
+        await JS.InvokeVoidAsync("descargarArchivo", $"Presupuesto_{presupuesto!.Id:0000}.pdf", "application/pdf", streamRef);
+    }
+}

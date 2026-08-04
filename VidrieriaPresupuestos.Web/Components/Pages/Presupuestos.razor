@@ -1,0 +1,138 @@
+@page "/presupuestos"
+@rendermode InteractiveServer
+@inject VidrieriaContext Context
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>JASC - Presupuestos</PageTitle>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudText Typo="Typo.h5" Class="mb-4">Presupuestos</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="busquedaClienteFiltro"
+                          Label="Buscar por cliente"
+                          Immediate="true"
+                          @bind-Value:after="AplicarFiltros" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSelect T="EstadoPresupuesto?" @bind-Value="estadoFiltro" @bind-Value:after="AplicarFiltros" Label="Estado">
+                <MudSelectItem T="EstadoPresupuesto?" Value="@((EstadoPresupuesto?)null)">Todos</MudSelectItem>
+                @foreach (var estado in Enum.GetValues<EstadoPresupuesto>())
+                {
+                    <MudSelectItem T="EstadoPresupuesto?" Value="@((EstadoPresupuesto?)estado)">@estado</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Class="pa-4">
+    <MudTable T="Presupuesto" Items="presupuestosFiltrados" Hover="true">
+        <HeaderContent>
+            <MudTh>Cliente</MudTh>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Valor Neto</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Cliente">@context.Cliente.Nombre</MudTd>
+            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Color="@ColorEstado(context.Estado)" Size="Size.Small">@context.Estado</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Valor Neto">@context.ValorNeto.ToString("C")</MudTd>
+            <MudTd>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" OnClick="@(() => VerDetalle(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditarPresupuesto(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => EliminarPresupuesto(context))" />
+                </MudStack>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay presupuestos que coincidan con los filtros.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<Presupuesto> presupuestos = new();
+    private List<Presupuesto> presupuestosFiltrados = new();
+
+    private string? busquedaClienteFiltro;
+    private EstadoPresupuesto? estadoFiltro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        presupuestos = await Context.Presupuestos
+            .Include(p => p.Cliente)
+            .OrderByDescending(p => p.Fecha)
+            .ToListAsync();
+
+        AplicarFiltros();
+    }
+
+    private void AplicarFiltros()
+    {
+        presupuestosFiltrados = presupuestos
+            .Where(p => string.IsNullOrWhiteSpace(busquedaClienteFiltro)
+                        || p.Cliente.Nombre.Contains(busquedaClienteFiltro, StringComparison.OrdinalIgnoreCase))
+            .Where(p => estadoFiltro is null || p.Estado == estadoFiltro)
+            .ToList();
+    }
+
+    private Color ColorEstado(EstadoPresupuesto estado) => estado switch
+    {
+        EstadoPresupuesto.Aprobado => Color.Success,
+        EstadoPresupuesto.Rechazado => Color.Error,
+        EstadoPresupuesto.Vencido => Color.Warning,
+        _ => Color.Default
+    };
+
+    private void VerDetalle(Presupuesto presupuesto)
+    {
+        NavigationManager.NavigateTo($"/presupuestos/{presupuesto.Id}");
+    }
+
+    private void EditarPresupuesto(Presupuesto presupuesto)
+    {
+        NavigationManager.NavigateTo($"/presupuestos/{presupuesto.Id}/editar");
+    }
+
+    private async Task EliminarPresupuesto(Presupuesto presupuesto)
+    {
+        var confirmado = await DialogService.ShowMessageBoxAsync(
+            "Eliminar presupuesto",
+            $"¿Confirma que desea eliminar el presupuesto de '{presupuesto.Cliente.Nombre}' del {presupuesto.Fecha:dd/MM/yyyy}? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true)
+        {
+            return;
+        }
+
+        try
+        {
+            Context.Presupuestos.Remove(presupuesto);
+            await Context.SaveChangesAsync();
+
+            presupuestos.Remove(presupuesto);
+            AplicarFiltros();
+            Snackbar.Add("Presupuesto eliminado", Severity.Success);
+        }
+        catch (DbUpdateException)
+        {
+            Context.Entry(presupuesto).State = EntityState.Unchanged;
+            Snackbar.Add("No se pudo eliminar el presupuesto.", Severity.Error);
+        }
+        catch (InvalidOperationException)
+        {
+            Context.Entry(presupuesto).State = EntityState.Unchanged;
+            Snackbar.Add("No se pudo eliminar el presupuesto.", Severity.Error);
+        }
+    }
+}
