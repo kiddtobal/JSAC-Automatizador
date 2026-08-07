@@ -26,6 +26,7 @@
                                       Label="Nombre"
                                       Required="true"
                                       RequiredError="El nombre es obligatorio"
+                                      Validation="@(new Func<string, string>(ValidarNombreSoloTexto))"
                                       Immediate="true" />
                     </MudItem>
                     <MudItem xs="12" md="4">
@@ -55,7 +56,7 @@
                 </MudGrid>
 
                 <MudStack Row="true" Class="mt-4">
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="@ContieneDigito(nuevoCliente.Nombre)">
                         Guardar
                     </MudButton>
                     <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="CancelarFormulario">
@@ -84,7 +85,7 @@
                 <MudPaper Outlined="true" Class="pa-3 mb-2">
                     <MudGrid>
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="cliente.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" />
+                            <MudTextField @bind-Value="cliente.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" Validation="@(new Func<string, string>(ValidarNombreSoloTexto))" />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="cliente.Telefono" Label="Teléfono" Immediate="true" />
@@ -109,7 +110,7 @@
                     </MudGrid>
 
                     <MudStack Row="true" Class="mt-2">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!HayCambios(cliente))" OnClick="@(() => GuardarCambiosCliente(cliente))">Guardar Cambios</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!HayCambios(cliente) || ContieneDigito(cliente.Nombre))" OnClick="@(() => GuardarCambiosCliente(cliente))">Guardar Cambios</MudButton>
                         <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@(() => CancelarEdicionCliente(cliente))">Cancelar</MudButton>
                     </MudStack>
                 </MudPaper>
@@ -183,6 +184,11 @@
         nuevoCliente = new Cliente();
         await CargarClientes();
     }
+
+    private bool ContieneDigito(string? texto) => !string.IsNullOrEmpty(texto) && texto.Any(char.IsDigit);
+
+    private string? ValidarNombreSoloTexto(string valor) =>
+        ContieneDigito(valor) ? "Solo se permite ingresar texto." : null;
 
     private bool EstaClienteExpandido(Cliente cliente) => clientesExpandido.Contains(cliente.Id);
 

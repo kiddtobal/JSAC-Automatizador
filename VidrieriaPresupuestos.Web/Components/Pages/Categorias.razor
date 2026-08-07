@@ -159,16 +159,44 @@
                                     {
                                         @foreach (var precio in producto.PreciosReferencia.OrderBy(p => p.Precio))
                                         {
-                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
-                                                <span>
-                                                    <MudText Typo="Typo.body2" Style="display:inline">@precio.Proveedor — @precio.Precio.ToString("C")</MudText>
-                                                    @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
-                                                    {
-                                                        <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" Href="@precio.UrlReferencia" Target="_blank" />
-                                                    }
-                                                </span>
-                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => EliminarPrecioExistente(producto, precio))" />
-                                            </MudStack>
+                                            <div @key="precio.Id">
+                                            @if (EstaPrecioExpandido(precio))
+                                            {
+                                                <MudPaper Outlined="true" Class="pa-2 mb-2">
+                                                    <MudGrid Spacing="2">
+                                                        <MudItem xs="12" sm="4">
+                                                            <MudTextField @bind-Value="precio.Proveedor" Label="Proveedor" Immediate="true" />
+                                                        </MudItem>
+                                                        <MudItem xs="12" sm="3">
+                                                            <MudNumericField T="decimal" @bind-Value="precio.Precio" Label="Precio" Immediate="true" Min="0" Format="F0" />
+                                                        </MudItem>
+                                                        <MudItem xs="12" sm="5">
+                                                            <MudTextField @bind-Value="precio.UrlReferencia" Label="URL (opcional)" Immediate="true" />
+                                                        </MudItem>
+                                                    </MudGrid>
+                                                    <MudStack Row="true" Class="mt-2">
+                                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@(!HayCambiosPrecio(precio))" OnClick="@(() => GuardarCambiosPrecio(precio))">Guardar Cambios</MudButton>
+                                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => CancelarEdicionPrecio(precio))">Cancelar</MudButton>
+                                                    </MudStack>
+                                                </MudPaper>
+                                            }
+                                            else
+                                            {
+                                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
+                                                    <span>
+                                                        <MudText Typo="Typo.body2" Style="display:inline">@precio.Proveedor — @precio.Precio.ToString("C")</MudText>
+                                                        @if (!string.IsNullOrWhiteSpace(precio.UrlReferencia))
+                                                        {
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Link" Size="Size.Small" Href="@precio.UrlReferencia" Target="_blank" title="Verificar precio" />
+                                                        }
+                                                    </span>
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => AlternarPrecioExpandido(precio))" />
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => EliminarPrecioExistente(producto, precio))" />
+                                                    </MudStack>
+                                                </MudStack>
+                                            }
+                                            </div>
                                         }
                                     }
 
@@ -247,6 +275,9 @@
     private string? nuevoPrecioExistenteProveedor;
     private decimal nuevoPrecioExistenteValor;
     private string? nuevoPrecioExistenteUrl;
+
+    private HashSet<int> preciosExpandidos = new();
+    private Dictionary<int, ProductoPrecioReferencia> snapshotsPrecios = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -556,6 +587,91 @@
         productoAgregandoPrecioId = null;
 
         Snackbar.Add("Precio agregado", Severity.Success);
+    }
+
+    private bool EstaPrecioExpandido(ProductoPrecioReferencia precio) => preciosExpandidos.Contains(precio.Id);
+
+    private void AlternarPrecioExpandido(ProductoPrecioReferencia precio)
+    {
+        if (!preciosExpandidos.Add(precio.Id))
+        {
+            if (HayCambiosPrecio(precio))
+            {
+                RevertirPrecio(precio);
+            }
+
+            preciosExpandidos.Remove(precio.Id);
+            snapshotsPrecios.Remove(precio.Id);
+        }
+        else
+        {
+            snapshotsPrecios[precio.Id] = ClonarPrecio(precio);
+        }
+    }
+
+    private static ProductoPrecioReferencia ClonarPrecio(ProductoPrecioReferencia p) => new()
+    {
+        Id = p.Id,
+        ProductoCatalogoId = p.ProductoCatalogoId,
+        Proveedor = p.Proveedor,
+        Precio = p.Precio,
+        UrlReferencia = p.UrlReferencia
+    };
+
+    private bool HayCambiosPrecio(ProductoPrecioReferencia precio)
+    {
+        if (!snapshotsPrecios.TryGetValue(precio.Id, out var original))
+        {
+            return false;
+        }
+
+        return precio.Proveedor != original.Proveedor
+            || precio.Precio != original.Precio
+            || precio.UrlReferencia != original.UrlReferencia;
+    }
+
+    private void RevertirPrecio(ProductoPrecioReferencia precio)
+    {
+        var original = snapshotsPrecios[precio.Id];
+        precio.Proveedor = original.Proveedor;
+        precio.Precio = original.Precio;
+        precio.UrlReferencia = original.UrlReferencia;
+    }
+
+    private void CancelarEdicionPrecio(ProductoPrecioReferencia precio)
+    {
+        RevertirPrecio(precio);
+        preciosExpandidos.Remove(precio.Id);
+        snapshotsPrecios.Remove(precio.Id);
+    }
+
+    private async Task GuardarCambiosPrecio(ProductoPrecioReferencia precio)
+    {
+        if (string.IsNullOrWhiteSpace(precio.Proveedor))
+        {
+            Snackbar.Add("El proveedor es obligatorio", Severity.Error);
+            return;
+        }
+
+        if (precio.Precio <= 0)
+        {
+            Snackbar.Add("El precio debe ser mayor a 0", Severity.Error);
+            return;
+        }
+
+        if (!UrlValida(precio.UrlReferencia))
+        {
+            Snackbar.Add("La URL no tiene un formato válido", Severity.Error);
+            return;
+        }
+
+        precio.Precio = Math.Round(precio.Precio, 0, MidpointRounding.AwayFromZero);
+
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Precio actualizado", Severity.Success);
+
+        preciosExpandidos.Remove(precio.Id);
+        snapshotsPrecios.Remove(precio.Id);
     }
 
     private async Task EliminarPrecioExistente(ProductoCatalogo producto, ProductoPrecioReferencia precio)
