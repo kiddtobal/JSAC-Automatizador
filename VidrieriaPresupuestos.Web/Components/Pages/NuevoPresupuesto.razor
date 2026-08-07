@@ -1,9 +1,11 @@
 @page "/presupuestos/nuevo"
 @page "/presupuestos/{Id:int}/editar"
 @rendermode InteractiveServer
+@implements IAsyncDisposable
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <PageTitle>@(Id.HasValue ? "JASC - Editar Presupuesto" : "JASC - Nuevo Presupuesto")</PageTitle>
 
@@ -58,7 +60,12 @@
             <MudTextField @bind-Value="comuna" Label="Comuna" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
         </MudItem>
         <MudItem xs="12">
-            <MudTextField @bind-Value="descripcionTrabajo" Label="Descripción del Trabajo" Lines="4" Immediate="true" />
+            <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+                <MudTextField @bind-Value="descripcionTrabajo" Label="Descripción del Trabajo" Lines="4" Immediate="true" Class="flex-grow-1" />
+                <MudIconButton Icon="@(escuchandoDictado ? Icons.Material.Filled.Mic : Icons.Material.Filled.MicNone)"
+                               Color="@(escuchandoDictado ? Color.Error : Color.Default)"
+                               OnClick="AlternarDictado" />
+            </MudStack>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -304,6 +311,9 @@
     private List<ItemPresupuesto> itemsOriginales = new();
     private List<CargoAdicional> cargosOriginales = new();
     private bool cargosPorDefectoCreados;
+
+    private bool escuchandoDictado;
+    private DotNetObjectReference<NuevoPresupuesto>? dotNetRefDictado;
 
     private List<Cliente> clientes = new();
     private Cliente? clienteSeleccionado;
@@ -697,5 +707,67 @@
         items = new();
         itemsExpandido = new();
         CrearCargosPorDefecto();
+    }
+
+    private async Task AlternarDictado()
+    {
+        if (escuchandoDictado)
+        {
+            await JS.InvokeVoidAsync("detenerDictado");
+            escuchandoDictado = false;
+            return;
+        }
+
+        dotNetRefDictado ??= DotNetObjectReference.Create(this);
+        var soportado = await JS.InvokeAsync<bool>("iniciarDictado", dotNetRefDictado);
+
+        if (!soportado)
+        {
+            Snackbar.Add("Tu navegador no soporta dictado por voz - probá con Chrome o Edge", Severity.Warning);
+            return;
+        }
+
+        escuchandoDictado = true;
+    }
+
+    [JSInvokable]
+    public void AgregarFragmentoDictado(string texto)
+    {
+        descripcionTrabajo = string.IsNullOrWhiteSpace(descripcionTrabajo)
+            ? texto
+            : $"{descripcionTrabajo} {texto}";
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnFinDictado()
+    {
+        escuchandoDictado = false;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnErrorDictado(string error)
+    {
+        escuchandoDictado = false;
+        Snackbar.Add("Ocurrió un error con el dictado por voz. Intentá de nuevo.", Severity.Error);
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (escuchandoDictado)
+            {
+                await JS.InvokeVoidAsync("detenerDictado");
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        dotNetRefDictado?.Dispose();
     }
 }
