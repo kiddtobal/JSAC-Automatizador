@@ -37,6 +37,13 @@
             }
         </MudItem>
         <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="numeroCotizacion"
+                          Label="Número de Cotización"
+                          Immediate="true"
+                          Required="true"
+                          RequiredError="Debe indicar el Número de Cotización" />
+        </MudItem>
+        <MudItem xs="12" md="3">
             <MudDatePicker Label="Fecha" @bind-Date="fecha" />
         </MudItem>
         <MudItem xs="12" md="3">
@@ -320,6 +327,7 @@
     private string? busquedaCliente;
     private List<Cliente> clientesFiltrados = new();
     private bool clienteInvalidoAlGuardar;
+    private string? numeroCotizacion;
     private DateTime? fecha = DateTime.Today;
     private List<Cotizador> cotizadores = new();
     private Cotizador? cotizadorSeleccionado;
@@ -394,6 +402,7 @@
 
         clienteSeleccionado = presupuestoExistente.Cliente;
         busquedaCliente = presupuestoExistente.Cliente.Nombre;
+        numeroCotizacion = presupuestoExistente.NumeroCotizacion;
         fecha = presupuestoExistente.Fecha;
         cotizadorSeleccionado = presupuestoExistente.Cotizador;
         referencia = presupuestoExistente.Referencia;
@@ -585,6 +594,12 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(numeroCotizacion))
+        {
+            Snackbar.Add("Debe indicar el Número de Cotización", Severity.Error);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(local))
         {
             Snackbar.Add("Debe indicar el Local", Severity.Error);
@@ -651,6 +666,7 @@
 
             presupuestoExistente.ClienteId = clienteSeleccionado.Id;
             presupuestoExistente.Cliente = clienteSeleccionado;
+            presupuestoExistente.NumeroCotizacion = numeroCotizacion;
             presupuestoExistente.Fecha = fecha ?? DateTime.Today;
             presupuestoExistente.CotizadorId = cotizadorSeleccionado.Id;
             presupuestoExistente.Cotizador = cotizadorSeleccionado;
@@ -673,6 +689,7 @@
         {
             ClienteId = clienteSeleccionado.Id,
             Cliente = clienteSeleccionado,
+            NumeroCotizacion = numeroCotizacion,
             Fecha = fecha ?? DateTime.Today,
             Estado = EstadoPresupuesto.Pendiente,
             DescripcionTrabajo = descripcionTrabajo,
@@ -697,6 +714,7 @@
         busquedaCliente = null;
         clientesFiltrados = new();
         clienteInvalidoAlGuardar = false;
+        numeroCotizacion = null;
         fecha = DateTime.Today;
         cotizadorSeleccionado = null;
         referencia = null;

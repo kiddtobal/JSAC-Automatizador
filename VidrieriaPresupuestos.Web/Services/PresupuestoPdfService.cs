@@ -53,7 +53,7 @@ namespace VidrieriaPresupuestos.Web.Services
 
                 row.RelativeItem(2).Column(column =>
                 {
-                    column.Item().Border(1).Padding(8).AlignCenter().Text($"Presupuesto N° {presupuesto.Id:0000}").Bold().FontSize(13);
+                    column.Item().Border(1).Padding(8).AlignCenter().Text($"Presupuesto N° {presupuesto.NumeroCotizacion}").Bold().FontSize(13);
                     column.Item().PaddingTop(4).AlignCenter().Text(TextoFecha(presupuesto.Fecha));
                 });
             });

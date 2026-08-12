@@ -16,7 +16,7 @@
 else if (presupuesto is not null)
 {
     <MudPaper Class="pa-4 mb-4">
-        <MudText Typo="Typo.h5" Class="mb-4">Presupuesto #@presupuesto.Id</MudText>
+        <MudText Typo="Typo.h5" Class="mb-4">Presupuesto N° @presupuesto.NumeroCotizacion</MudText>
 
         <MudGrid>
             <MudItem xs="12" md="6">
@@ -193,6 +193,6 @@ else if (presupuesto is not null)
         using var stream = new MemoryStream(bytes);
         using var streamRef = new DotNetStreamReference(stream);
 
-        await JS.InvokeVoidAsync("descargarArchivo", $"Presupuesto_{presupuesto!.Id:0000}.pdf", "application/pdf", streamRef);
+        await JS.InvokeVoidAsync("descargarArchivo", $"Presupuesto_{presupuesto!.NumeroCotizacion}.pdf", "application/pdf", streamRef);
     }
 }
