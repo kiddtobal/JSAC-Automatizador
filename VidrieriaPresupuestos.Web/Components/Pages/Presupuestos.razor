@@ -32,6 +32,7 @@
 <MudPaper Class="pa-4">
     <MudTable T="Presupuesto" Items="presupuestosFiltrados" Hover="true">
         <HeaderContent>
+            <MudTh>N° Cotización</MudTh>
             <MudTh>Cliente</MudTh>
             <MudTh>Fecha</MudTh>
             <MudTh>Estado</MudTh>
@@ -39,6 +40,7 @@
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
+            <MudTd DataLabel="N° Cotización">@context.NumeroCotizacion</MudTd>
             <MudTd DataLabel="Cliente">@context.Cliente.Nombre</MudTd>
             <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
             <MudTd DataLabel="Estado">

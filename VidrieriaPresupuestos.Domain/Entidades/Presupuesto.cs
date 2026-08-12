@@ -8,6 +8,10 @@ namespace VidrieriaPresupuestos.Domain.Entidades
     {
         public int Id { get; set; }
 
+        [Required]
+        [StringLength(50)]
+        public string NumeroCotizacion { get; set; } = null!;
+
         public int ClienteId { get; set; }
 
         [Required]
