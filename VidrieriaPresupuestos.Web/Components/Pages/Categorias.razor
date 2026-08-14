@@ -44,7 +44,7 @@
             else
             {
                 <MudPaper Outlined="true" Class="pa-4">
-                    <MudTextField @bind-Value="nombreEdicion" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" />
+                    <MudTextField @bind-Value="nombreEdicion" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" @bind-Value:after="() => nombreEdicion = TextoHelper.AplicarTitleCase(nombreEdicion)" />
                     <MudStack Row="true" Class="mt-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarNombreCategoria">Guardar Cambios</MudButton>
                         <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="EliminarCategoria">Eliminar Categoría</MudButton>
@@ -64,7 +64,7 @@
                         <MudPaper Outlined="true" Class="pa-3 mb-3">
                             <MudGrid>
                                 <MudItem xs="12" sm="6">
-                                    <MudTextField @bind-Value="nuevoProductoNombre" Label="Nombre" Immediate="true" Required="true" RequiredError="Obligatorio" />
+                                    <MudTextField @bind-Value="nuevoProductoNombre" Label="Nombre" Immediate="true" Required="true" RequiredError="Obligatorio" @bind-Value:after="() => nuevoProductoNombre = TextoHelper.AplicarTitleCase(nuevoProductoNombre)" />
                                 </MudItem>
                                 <MudItem xs="12" sm="4">
                                     <MudTextField @bind-Value="nuevoProductoUnidad" Label="Unidad (ej: u., m2, ml)" Immediate="true" Required="true" RequiredError="Obligatorio" />
@@ -95,7 +95,7 @@
 
                             <MudGrid Class="mt-1">
                                 <MudItem xs="12" sm="4">
-                                    <MudTextField @bind-Value="nuevoPrecioProveedor" Label="Proveedor" Immediate="true" />
+                                    <MudTextField @bind-Value="nuevoPrecioProveedor" Label="Proveedor" Immediate="true" @bind-Value:after="() => nuevoPrecioProveedor = TextoHelper.AplicarTitleCase(nuevoPrecioProveedor)" />
                                 </MudItem>
                                 <MudItem xs="12" sm="3">
                                     <MudNumericField T="decimal" @bind-Value="nuevoPrecioValor" Label="Precio" Immediate="true" Min="0" Format="F0" />
@@ -128,7 +128,7 @@
                                 <MudPaper Outlined="true" Class="pa-3 mb-2">
                                     <MudGrid>
                                         <MudItem xs="12" sm="6">
-                                            <MudTextField @bind-Value="producto.Nombre" Label="Nombre" Immediate="true" />
+                                            <MudTextField @bind-Value="producto.Nombre" Label="Nombre" Immediate="true" @bind-Value:after="() => producto.Nombre = TextoHelper.AplicarTitleCase(producto.Nombre) ?? string.Empty" />
                                         </MudItem>
                                         <MudItem xs="12" sm="6">
                                             <MudTextField @bind-Value="producto.Unidad" Label="Unidad" Immediate="true" />
@@ -165,7 +165,7 @@
                                                 <MudPaper Outlined="true" Class="pa-2 mb-2">
                                                     <MudGrid Spacing="2">
                                                         <MudItem xs="12" sm="4">
-                                                            <MudTextField @bind-Value="precio.Proveedor" Label="Proveedor" Immediate="true" />
+                                                            <MudTextField @bind-Value="precio.Proveedor" Label="Proveedor" Immediate="true" @bind-Value:after="() => precio.Proveedor = TextoHelper.AplicarTitleCase(precio.Proveedor) ?? string.Empty" />
                                                         </MudItem>
                                                         <MudItem xs="12" sm="3">
                                                             <MudNumericField T="decimal" @bind-Value="precio.Precio" Label="Precio" Immediate="true" Min="0" Format="F0" />
@@ -204,7 +204,7 @@
                                     {
                                         <MudGrid Class="mt-1">
                                             <MudItem xs="12" sm="4">
-                                                <MudTextField @bind-Value="nuevoPrecioExistenteProveedor" Label="Proveedor" Immediate="true" />
+                                                <MudTextField @bind-Value="nuevoPrecioExistenteProveedor" Label="Proveedor" Immediate="true" @bind-Value:after="() => nuevoPrecioExistenteProveedor = TextoHelper.AplicarTitleCase(nuevoPrecioExistenteProveedor)" />
                                             </MudItem>
                                             <MudItem xs="12" sm="3">
                                                 <MudNumericField T="decimal" @bind-Value="nuevoPrecioExistenteValor" Label="Precio" Immediate="true" Min="0" Format="F0" />

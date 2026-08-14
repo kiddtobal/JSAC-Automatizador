@@ -27,11 +27,13 @@
                                       Required="true"
                                       RequiredError="El nombre es obligatorio"
                                       Validation="@(new Func<string, string>(ValidarNombreSoloTexto))"
-                                      Immediate="true" />
+                                      Immediate="true"
+                                      @bind-Value:after="() => nuevoCotizador.Nombre = TextoHelper.AplicarTitleCase(nuevoCotizador.Nombre) ?? string.Empty" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="nuevoCotizador.Cargo"
-                                      Label="Cargo" />
+                                      Label="Cargo"
+                                      @bind-Value:after="() => nuevoCotizador.Cargo = TextoHelper.AplicarTitleCase(nuevoCotizador.Cargo)" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="nuevoCotizador.Celular"
@@ -79,10 +81,10 @@
                 <MudPaper Outlined="true" Class="pa-3 mb-2">
                     <MudGrid>
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="cotizador.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" Validation="@(new Func<string, string>(ValidarNombreSoloTexto))" />
+                            <MudTextField @bind-Value="cotizador.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" Validation="@(new Func<string, string>(ValidarNombreSoloTexto))" @bind-Value:after="() => cotizador.Nombre = TextoHelper.AplicarTitleCase(cotizador.Nombre) ?? string.Empty" />
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="cotizador.Cargo" Label="Cargo" Immediate="true" />
+                            <MudTextField @bind-Value="cotizador.Cargo" Label="Cargo" Immediate="true" @bind-Value:after="() => cotizador.Cargo = TextoHelper.AplicarTitleCase(cotizador.Cargo)" />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="cotizador.Celular" Label="Celular" Immediate="true" Required="true" RequiredError="El celular es obligatorio" />
