@@ -27,7 +27,8 @@
                                       Required="true"
                                       RequiredError="El nombre es obligatorio"
                                       Validation="@(new Func<string, string>(ValidarNombreSoloTexto))"
-                                      Immediate="true" />
+                                      Immediate="true"
+                                      @bind-Value:after="() => nuevoCliente.Nombre = TextoHelper.AplicarTitleCase(nuevoCliente.Nombre) ?? string.Empty" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="nuevoCliente.Telefono"
@@ -47,11 +48,13 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="nuevoCliente.Cargo"
-                                      Label="Cargo" />
+                                      Label="Cargo"
+                                      @bind-Value:after="() => nuevoCliente.Cargo = TextoHelper.AplicarTitleCase(nuevoCliente.Cargo)" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="nuevoCliente.Empresa"
-                                      Label="Empresa" />
+                                      Label="Empresa"
+                                      @bind-Value:after="() => nuevoCliente.Empresa = TextoHelper.AplicarTitleCase(nuevoCliente.Empresa)" />
                     </MudItem>
                 </MudGrid>
 
@@ -85,7 +88,7 @@
                 <MudPaper Outlined="true" Class="pa-3 mb-2">
                     <MudGrid>
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="cliente.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" Validation="@(new Func<string, string>(ValidarNombreSoloTexto))" />
+                            <MudTextField @bind-Value="cliente.Nombre" Label="Nombre" Immediate="true" Required="true" RequiredError="El nombre es obligatorio" Validation="@(new Func<string, string>(ValidarNombreSoloTexto))" @bind-Value:after="() => cliente.Nombre = TextoHelper.AplicarTitleCase(cliente.Nombre) ?? string.Empty" />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="cliente.Telefono" Label="Teléfono" Immediate="true" />
@@ -102,10 +105,10 @@
                             </MudSelect>
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="cliente.Cargo" Label="Cargo" Immediate="true" />
+                            <MudTextField @bind-Value="cliente.Cargo" Label="Cargo" Immediate="true" @bind-Value:after="() => cliente.Cargo = TextoHelper.AplicarTitleCase(cliente.Cargo)" />
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="cliente.Empresa" Label="Empresa" Immediate="true" />
+                            <MudTextField @bind-Value="cliente.Empresa" Label="Empresa" Immediate="true" @bind-Value:after="() => cliente.Empresa = TextoHelper.AplicarTitleCase(cliente.Empresa)" />
                         </MudItem>
                     </MudGrid>
 

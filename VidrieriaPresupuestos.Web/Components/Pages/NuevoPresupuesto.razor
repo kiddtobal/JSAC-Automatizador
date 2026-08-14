@@ -4,6 +4,7 @@
 @implements IAsyncDisposable
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 
@@ -55,20 +56,20 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="referencia" Label="Referencia" Immediate="true" />
+            <MudTextField @bind-Value="referencia" Label="Referencia" Immediate="true" @bind-Value:after="() => referencia = TextoHelper.AplicarTitleCase(referencia)" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="local" Label="Local" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+            <MudTextField @bind-Value="local" Label="Local" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => local = TextoHelper.AplicarTitleCase(local)" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="direccionTrabajo" Label="Dirección del Trabajo" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+            <MudTextField @bind-Value="direccionTrabajo" Label="Dirección del Trabajo" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => direccionTrabajo = TextoHelper.AplicarTitleCase(direccionTrabajo)" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="comuna" Label="Comuna" Required="true" RequiredError="Campo obligatorio" Immediate="true" />
+            <MudTextField @bind-Value="comuna" Label="Comuna" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => comuna = TextoHelper.AplicarTitleCase(comuna)" />
         </MudItem>
         <MudItem xs="12">
             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
-                <MudTextField @bind-Value="descripcionTrabajo" Label="Descripción del Trabajo" Lines="4" Immediate="true" Class="flex-grow-1" />
+                <MudTextField @bind-Value="descripcionTrabajo" Label="Descripción del Trabajo" Lines="4" Immediate="true" Class="flex-grow-1" @bind-Value:after="() => descripcionTrabajo = TextoHelper.AplicarMayusculaInicial(descripcionTrabajo)" />
                 <MudIconButton Icon="@(escuchandoDictado ? Icons.Material.Filled.Mic : Icons.Material.Filled.MicNone)"
                                Color="@(escuchandoDictado ? Color.Error : Color.Default)"
                                OnClick="AlternarDictado" />
@@ -276,7 +277,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Nombre">
-                    <MudTextField @bind-Value="context.Nombre" Immediate="true" />
+                    <MudTextField @bind-Value="context.Nombre" Immediate="true" @bind-Value:after="() => context.Nombre = TextoHelper.AplicarTitleCase(context.Nombre) ?? string.Empty" />
                 </MudTd>
                 <MudTd DataLabel="Tipo">
                     <MudSelect T="TipoValorCargo" @bind-Value="context.TipoValor" @bind-Value:after="() => RecalcularCargo(context)" Dense="true">
@@ -305,7 +306,7 @@
 </MudPaper>
 
 <MudStack Row="true">
-    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" OnClick="GuardarPresupuesto">
+    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" Disabled="@(!FormularioValido)" OnClick="GuardarPresupuesto">
         @(Id.HasValue ? "Guardar Cambios" : "Guardar Presupuesto")
     </MudButton>
 </MudStack>
@@ -356,6 +357,81 @@
     private decimal Subtotal => items.Sum(i => i.Total);
     private decimal SubtotalSinComision => items.Where(i => i.Origen == OrigenItem.Inventario).Sum(i => i.Total);
     private decimal ValorNeto => Subtotal + cargos.Sum(c => c.MontoCalculado);
+
+    private bool FormularioValido => ObtenerProblemasValidacion().Count == 0;
+
+    private List<string> ObtenerProblemasValidacion()
+    {
+        var problemas = new List<string>();
+
+        if (clienteSeleccionado is null)
+        {
+            problemas.Add("Falta seleccionar un Cliente");
+        }
+
+        if (cotizadorSeleccionado is null)
+        {
+            problemas.Add("Falta seleccionar un Cotizador");
+        }
+
+        if (string.IsNullOrWhiteSpace(numeroCotizacion))
+        {
+            problemas.Add("Falta indicar el Número de Cotización");
+        }
+
+        if (string.IsNullOrWhiteSpace(local))
+        {
+            problemas.Add("Falta indicar el Local");
+        }
+
+        if (string.IsNullOrWhiteSpace(direccionTrabajo))
+        {
+            problemas.Add("Falta indicar la Dirección del Trabajo");
+        }
+
+        if (string.IsNullOrWhiteSpace(comuna))
+        {
+            problemas.Add("Falta indicar la Comuna");
+        }
+
+        if (items.Count == 0)
+        {
+            problemas.Add("Debe agregar al menos un ítem (Materiales o Mano de Obra)");
+        }
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var etiqueta = string.IsNullOrWhiteSpace(item.Descripcion) ? $"El ítem #{i + 1}" : $"El ítem '{item.Descripcion}'";
+
+            if (item.Cantidad <= 0)
+            {
+                problemas.Add($"{etiqueta} tiene Cantidad en 0");
+            }
+
+            if (item.PrecioBase <= 0)
+            {
+                problemas.Add($"{etiqueta} tiene Precio Base en 0");
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.UrlReferencia) && !Uri.TryCreate(item.UrlReferencia, UriKind.Absolute, out _))
+            {
+                problemas.Add($"{etiqueta} tiene una URL de referencia con formato inválido");
+            }
+        }
+
+        for (int i = 0; i < cargos.Count; i++)
+        {
+            var cargo = cargos[i];
+
+            if (string.IsNullOrWhiteSpace(cargo.Nombre))
+            {
+                problemas.Add($"El cargo adicional #{i + 1} no tiene nombre");
+            }
+        }
+
+        return problemas;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -581,150 +657,108 @@
 
     private async Task GuardarPresupuesto()
     {
-        if (clienteSeleccionado is null)
+        var problemas = ObtenerProblemasValidacion();
+        clienteInvalidoAlGuardar = clienteSeleccionado is null;
+
+        if (problemas.Count > 0)
         {
-            clienteInvalidoAlGuardar = true;
-            Snackbar.Add("Debe seleccionar un cliente", Severity.Error);
+            var itemsHtml = string.Join(string.Empty, problemas.Select(p => $"<li>{System.Net.WebUtility.HtmlEncode(p)}</li>"));
+            await DialogService.ShowMessageBoxAsync(
+                "No se puede guardar el presupuesto",
+                (MarkupString)$"<ul>{itemsHtml}</ul>");
             return;
         }
 
-        if (cotizadorSeleccionado is null)
+        try
         {
-            Snackbar.Add("Debe seleccionar un cotizador", Severity.Error);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(numeroCotizacion))
-        {
-            Snackbar.Add("Debe indicar el Número de Cotización", Severity.Error);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(local))
-        {
-            Snackbar.Add("Debe indicar el Local", Severity.Error);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(direccionTrabajo))
-        {
-            Snackbar.Add("Debe indicar la Dirección del Trabajo", Severity.Error);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(comuna))
-        {
-            Snackbar.Add("Debe indicar la Comuna", Severity.Error);
-            return;
-        }
-
-        if (items.Count == 0)
-        {
-            Snackbar.Add("Debe agregar al menos un ítem (Materiales o Mano de Obra)", Severity.Error);
-            return;
-        }
-
-        for (int i = 0; i < items.Count; i++)
-        {
-            var item = items[i];
-            var etiqueta = string.IsNullOrWhiteSpace(item.Descripcion) ? $"#{i + 1}" : item.Descripcion;
-
-            if (item.Cantidad <= 0 || item.PrecioBase <= 0)
+            if (Id.HasValue && presupuestoExistente is not null)
             {
-                Snackbar.Add($"El ítem '{etiqueta}' tiene valores inválidos: Cantidad y Precio Base deben ser mayores a 0", Severity.Error);
+                var itemsAEliminar = itemsOriginales.Where(oi => !items.Contains(oi)).ToList();
+                Context.ItemsPresupuesto.RemoveRange(itemsAEliminar);
+
+                var itemsNuevos = items.Where(i => i.Id == 0).ToList();
+                foreach (var item in itemsNuevos)
+                {
+                    item.PresupuestoId = presupuestoExistente.Id;
+                }
+                Context.ItemsPresupuesto.AddRange(itemsNuevos);
+
+                var cargosAEliminar = cargosOriginales.Where(oc => !cargos.Contains(oc)).ToList();
+                Context.CargosAdicionales.RemoveRange(cargosAEliminar);
+
+                var cargosNuevos = cargos.Where(c => c.Id == 0).ToList();
+                foreach (var cargo in cargosNuevos)
+                {
+                    cargo.PresupuestoId = presupuestoExistente.Id;
+                }
+                Context.CargosAdicionales.AddRange(cargosNuevos);
+
+                presupuestoExistente.ClienteId = clienteSeleccionado!.Id;
+                presupuestoExistente.Cliente = clienteSeleccionado;
+                presupuestoExistente.NumeroCotizacion = numeroCotizacion!;
+                presupuestoExistente.Fecha = fecha ?? DateTime.Today;
+                presupuestoExistente.CotizadorId = cotizadorSeleccionado!.Id;
+                presupuestoExistente.Cotizador = cotizadorSeleccionado;
+                presupuestoExistente.Referencia = referencia;
+                presupuestoExistente.Local = local!;
+                presupuestoExistente.DireccionTrabajo = direccionTrabajo!;
+                presupuestoExistente.Comuna = comuna!;
+                presupuestoExistente.DescripcionTrabajo = descripcionTrabajo;
+                presupuestoExistente.Subtotal = Subtotal;
+                presupuestoExistente.ValorNeto = ValorNeto;
+
+                await Context.SaveChangesAsync();
+
+                Snackbar.Add("Presupuesto actualizado correctamente", Severity.Success);
+                NavigationManager.NavigateTo($"/presupuestos/{presupuestoExistente.Id}");
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(item.UrlReferencia) && !Uri.TryCreate(item.UrlReferencia, UriKind.Absolute, out _))
+            var presupuesto = new Presupuesto
             {
-                Snackbar.Add($"El ítem '{etiqueta}' tiene una URL de referencia con formato inválido", Severity.Error);
-                return;
-            }
-        }
+                ClienteId = clienteSeleccionado!.Id,
+                Cliente = clienteSeleccionado,
+                NumeroCotizacion = numeroCotizacion!,
+                Fecha = fecha ?? DateTime.Today,
+                Estado = EstadoPresupuesto.Pendiente,
+                DescripcionTrabajo = descripcionTrabajo,
+                CotizadorId = cotizadorSeleccionado!.Id,
+                Cotizador = cotizadorSeleccionado,
+                Referencia = referencia,
+                Local = local!,
+                DireccionTrabajo = direccionTrabajo!,
+                Comuna = comuna!,
+                Subtotal = Subtotal,
+                ValorNeto = ValorNeto,
+                Items = items,
+                CargosAdicionales = cargos
+            };
 
-        if (Id.HasValue && presupuestoExistente is not null)
-        {
-            var itemsAEliminar = itemsOriginales.Where(oi => !items.Contains(oi)).ToList();
-            Context.ItemsPresupuesto.RemoveRange(itemsAEliminar);
-
-            var itemsNuevos = items.Where(i => i.Id == 0).ToList();
-            foreach (var item in itemsNuevos)
-            {
-                item.PresupuestoId = presupuestoExistente.Id;
-            }
-            Context.ItemsPresupuesto.AddRange(itemsNuevos);
-
-            var cargosAEliminar = cargosOriginales.Where(oc => !cargos.Contains(oc)).ToList();
-            Context.CargosAdicionales.RemoveRange(cargosAEliminar);
-
-            var cargosNuevos = cargos.Where(c => c.Id == 0).ToList();
-            foreach (var cargo in cargosNuevos)
-            {
-                cargo.PresupuestoId = presupuestoExistente.Id;
-            }
-            Context.CargosAdicionales.AddRange(cargosNuevos);
-
-            presupuestoExistente.ClienteId = clienteSeleccionado.Id;
-            presupuestoExistente.Cliente = clienteSeleccionado;
-            presupuestoExistente.NumeroCotizacion = numeroCotizacion;
-            presupuestoExistente.Fecha = fecha ?? DateTime.Today;
-            presupuestoExistente.CotizadorId = cotizadorSeleccionado.Id;
-            presupuestoExistente.Cotizador = cotizadorSeleccionado;
-            presupuestoExistente.Referencia = referencia;
-            presupuestoExistente.Local = local;
-            presupuestoExistente.DireccionTrabajo = direccionTrabajo;
-            presupuestoExistente.Comuna = comuna;
-            presupuestoExistente.DescripcionTrabajo = descripcionTrabajo;
-            presupuestoExistente.Subtotal = Subtotal;
-            presupuestoExistente.ValorNeto = ValorNeto;
-
+            Context.Presupuestos.Add(presupuesto);
             await Context.SaveChangesAsync();
 
-            Snackbar.Add("Presupuesto actualizado correctamente", Severity.Success);
-            NavigationManager.NavigateTo($"/presupuestos/{presupuestoExistente.Id}");
-            return;
+            Snackbar.Add("Presupuesto guardado correctamente", Severity.Success);
+
+            clienteSeleccionado = null;
+            busquedaCliente = null;
+            clientesFiltrados = new();
+            clienteInvalidoAlGuardar = false;
+            numeroCotizacion = null;
+            fecha = DateTime.Today;
+            cotizadorSeleccionado = null;
+            referencia = null;
+            local = null;
+            direccionTrabajo = null;
+            comuna = null;
+            descripcionTrabajo = null;
+            items = new();
+            itemsExpandido = new();
+            CrearCargosPorDefecto();
         }
-
-        var presupuesto = new Presupuesto
+        catch (Exception)
         {
-            ClienteId = clienteSeleccionado.Id,
-            Cliente = clienteSeleccionado,
-            NumeroCotizacion = numeroCotizacion,
-            Fecha = fecha ?? DateTime.Today,
-            Estado = EstadoPresupuesto.Pendiente,
-            DescripcionTrabajo = descripcionTrabajo,
-            CotizadorId = cotizadorSeleccionado.Id,
-            Cotizador = cotizadorSeleccionado,
-            Referencia = referencia,
-            Local = local,
-            DireccionTrabajo = direccionTrabajo,
-            Comuna = comuna,
-            Subtotal = Subtotal,
-            ValorNeto = ValorNeto,
-            Items = items,
-            CargosAdicionales = cargos
-        };
-
-        Context.Presupuestos.Add(presupuesto);
-        await Context.SaveChangesAsync();
-
-        Snackbar.Add("Presupuesto guardado correctamente", Severity.Success);
-
-        clienteSeleccionado = null;
-        busquedaCliente = null;
-        clientesFiltrados = new();
-        clienteInvalidoAlGuardar = false;
-        numeroCotizacion = null;
-        fecha = DateTime.Today;
-        cotizadorSeleccionado = null;
-        referencia = null;
-        local = null;
-        direccionTrabajo = null;
-        comuna = null;
-        descripcionTrabajo = null;
-        items = new();
-        itemsExpandido = new();
-        CrearCargosPorDefecto();
+            Snackbar.Add("Ocurrió un error inesperado al guardar el presupuesto. Intentá nuevamente.", Severity.Error);
+        }
     }
 
     private async Task AlternarDictado()
@@ -754,6 +788,8 @@
         descripcionTrabajo = string.IsNullOrWhiteSpace(descripcionTrabajo)
             ? texto
             : $"{descripcionTrabajo} {texto}";
+
+        descripcionTrabajo = TextoHelper.AplicarMayusculaInicial(descripcionTrabajo);
 
         StateHasChanged();
     }

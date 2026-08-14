@@ -1,6 +1,6 @@
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="nombre" Label="Nombre" Required="true" RequiredError="El nombre es obligatorio" Immediate="true" />
+        <MudTextField @bind-Value="nombre" Label="Nombre" Required="true" RequiredError="El nombre es obligatorio" Immediate="true" @bind-Value:after="() => nombre = TextoHelper.AplicarTitleCase(nombre)" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
