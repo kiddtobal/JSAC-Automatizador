@@ -23,4 +23,13 @@
     <ApplicationIcon>jasc_icon.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <Target Name="CopyWwwrootToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <WwwrootFiles Include="$(MSBuildProjectDirectory)\wwwroot\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WwwrootFiles)"
+          DestinationFolder="$(OutDir)wwwroot\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

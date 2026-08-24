@@ -56,16 +56,16 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="referencia" Label="Referencia" Immediate="true" @bind-Value:after="() => referencia = TextoHelper.AplicarTitleCase(referencia)" />
+            <MudTextField @bind-Value="referencia" Label="Referencia" Immediate="true" @bind-Value:after="() => referencia = TextoHelper.AplicarMayusculaInicial(referencia)" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="local" Label="Local" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => local = TextoHelper.AplicarTitleCase(local)" />
+            <MudTextField @bind-Value="local" Label="Local" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => local = TextoHelper.AplicarMayusculaInicial(local)" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="direccionTrabajo" Label="Dirección del Trabajo" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => direccionTrabajo = TextoHelper.AplicarTitleCase(direccionTrabajo)" />
+            <MudTextField @bind-Value="direccionTrabajo" Label="Dirección del Trabajo" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => direccionTrabajo = TextoHelper.AplicarMayusculaInicial(direccionTrabajo)" />
         </MudItem>
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="comuna" Label="Comuna" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => comuna = TextoHelper.AplicarTitleCase(comuna)" />
+            <MudTextField @bind-Value="comuna" Label="Comuna" Required="true" RequiredError="Campo obligatorio" Immediate="true" @bind-Value:after="() => comuna = TextoHelper.AplicarMayusculaInicial(comuna)" />
         </MudItem>
         <MudItem xs="12">
             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
@@ -74,6 +74,9 @@
                                Color="@(escuchandoDictado ? Color.Error : Color.Default)"
                                OnClick="AlternarDictado" />
             </MudStack>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTextField @bind-Value="nota" Label="Nota" Lines="2" Immediate="true" @bind-Value:after="() => nota = TextoHelper.AplicarMayusculaInicial(nota)" />
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -277,7 +280,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Nombre">
-                    <MudTextField @bind-Value="context.Nombre" Immediate="true" @bind-Value:after="() => context.Nombre = TextoHelper.AplicarTitleCase(context.Nombre) ?? string.Empty" />
+                    <MudTextField @bind-Value="context.Nombre" Immediate="true" @bind-Value:after="() => context.Nombre = TextoHelper.AplicarMayusculaInicial(context.Nombre) ?? string.Empty" />
                 </MudTd>
                 <MudTd DataLabel="Tipo">
                     <MudSelect T="TipoValorCargo" @bind-Value="context.TipoValor" @bind-Value:after="() => RecalcularCargo(context)" Dense="true">
@@ -337,6 +340,7 @@
     private string? direccionTrabajo;
     private string? comuna;
     private string? descripcionTrabajo;
+    private string? nota;
     private List<ItemPresupuesto> items = new();
     private List<CargoAdicional> cargos = new();
     private HashSet<ItemPresupuesto> itemsExpandido = new();
@@ -486,6 +490,7 @@
         direccionTrabajo = presupuestoExistente.DireccionTrabajo;
         comuna = presupuestoExistente.Comuna;
         descripcionTrabajo = presupuestoExistente.DescripcionTrabajo;
+        nota = presupuestoExistente.Nota;
 
         items = presupuestoExistente.Items.ToList();
         cargos = presupuestoExistente.CargosAdicionales.ToList();
@@ -704,6 +709,7 @@
                 presupuestoExistente.DireccionTrabajo = direccionTrabajo!;
                 presupuestoExistente.Comuna = comuna!;
                 presupuestoExistente.DescripcionTrabajo = descripcionTrabajo;
+                presupuestoExistente.Nota = nota;
                 presupuestoExistente.Subtotal = Subtotal;
                 presupuestoExistente.ValorNeto = ValorNeto;
 
@@ -722,6 +728,7 @@
                 Fecha = fecha ?? DateTime.Today,
                 Estado = EstadoPresupuesto.Pendiente,
                 DescripcionTrabajo = descripcionTrabajo,
+                Nota = nota,
                 CotizadorId = cotizadorSeleccionado!.Id,
                 Cotizador = cotizadorSeleccionado,
                 Referencia = referencia,

@@ -25,6 +25,8 @@ namespace VidrieriaPresupuestos.Domain.Entidades
 
         public string? DescripcionTrabajo { get; set; }
 
+        public string? Nota { get; set; }
+
         public string? Referencia { get; set; }
 
         [Required]
