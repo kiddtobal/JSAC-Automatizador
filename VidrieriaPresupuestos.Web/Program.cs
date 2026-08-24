@@ -8,6 +8,8 @@ using VidrieriaPresupuestos.Web.Components;
 using VidrieriaPresupuestos.Web.Data;
 using VidrieriaPresupuestos.Web.Services;
 
+Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+
 QuestPDF.Settings.License = LicenseType.Community;
 
 var culturaApp = new CultureInfo("es-CL");

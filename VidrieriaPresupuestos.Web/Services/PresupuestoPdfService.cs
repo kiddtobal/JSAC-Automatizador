@@ -17,7 +17,8 @@ namespace VidrieriaPresupuestos.Web.Services
 
         public byte[] GenerarPdf(Presupuesto presupuesto)
         {
-            var logoPath = Path.Combine(_env.WebRootPath, "images", "logo.png");
+            var webRootPath = _env.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            var logoPath = Path.Combine(webRootPath, "images", "logo.png");
 
             var documento = Document.Create(container =>
             {
@@ -128,6 +129,15 @@ namespace VidrieriaPresupuestos.Web.Services
                 }
 
                 column.Item().AlignRight().Border(1).Padding(8).Text($"Valor Neto: {presupuesto.ValorNeto:C}").Bold().FontSize(12);
+
+                if (!string.IsNullOrWhiteSpace(presupuesto.Nota))
+                {
+                    column.Item().PaddingTop(8).Text(text =>
+                    {
+                        text.Span("Nota: ").Bold();
+                        text.Span(presupuesto.Nota);
+                    });
+                }
 
                 column.Item().PaddingTop(20).Column(cierre =>
                 {

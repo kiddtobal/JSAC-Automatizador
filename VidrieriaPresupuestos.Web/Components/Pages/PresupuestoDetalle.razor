@@ -47,6 +47,13 @@ else if (presupuesto is not null)
                     <MudText Typo="Typo.body1">@presupuesto.DescripcionTrabajo</MudText>
                 </MudItem>
             }
+            @if (!string.IsNullOrWhiteSpace(presupuesto.Nota))
+            {
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle2">Nota</MudText>
+                    <MudText Typo="Typo.body1">@presupuesto.Nota</MudText>
+                </MudItem>
+            }
             <MudItem xs="12" md="4">
                 <MudSelect T="EstadoPresupuesto" @bind-Value="presupuesto.Estado" @bind-Value:after="GuardarEstado" Label="Estado">
                     @foreach (var estado in Enum.GetValues<EstadoPresupuesto>())
