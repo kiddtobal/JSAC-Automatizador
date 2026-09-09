@@ -50,6 +50,9 @@ namespace VidrieriaPresupuestos.Web.Data
                     .HasForeignKey(i => i.PresupuestoId)
                     .OnDelete(DeleteBehavior.Cascade);
 
+                entity.Property(i => i.Cantidad)
+                    .HasPrecision(10, 4);
+
                 entity.Property(i => i.PrecioBase)
                     .HasPrecision(10, 2);
 

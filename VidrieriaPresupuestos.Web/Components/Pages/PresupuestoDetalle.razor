@@ -3,8 +3,6 @@
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
-@inject PresupuestoPdfService PdfService
-@inject IJSRuntime JS
 
 <PageTitle>JASC - Presupuesto</PageTitle>
 
@@ -81,7 +79,7 @@ else if (presupuesto is not null)
                     <MudTd DataLabel="Descripción">@context.Descripcion</MudTd>
                     <MudTd DataLabel="Categoría">@context.Categoria</MudTd>
                     <MudTd DataLabel="Unidad">@context.Unidad</MudTd>
-                    <MudTd DataLabel="Cantidad">@context.Cantidad</MudTd>
+                    <MudTd DataLabel="Cantidad">@context.Cantidad.ToString("0.####")</MudTd>
                     <MudTd DataLabel="Valor Unitario">@context.ValorUnitario.ToString("C")</MudTd>
                     <MudTd DataLabel="Total">@context.Total.ToString("C")</MudTd>
                     <MudTd>
@@ -112,7 +110,7 @@ else if (presupuesto is not null)
                     <MudTd DataLabel="Descripción">@context.Descripcion</MudTd>
                     <MudTd DataLabel="Categoría">@context.Categoria</MudTd>
                     <MudTd DataLabel="Unidad">@context.Unidad</MudTd>
-                    <MudTd DataLabel="Cantidad">@context.Cantidad</MudTd>
+                    <MudTd DataLabel="Cantidad">@context.Cantidad.ToString("0.####")</MudTd>
                     <MudTd DataLabel="Valor Unitario">@context.ValorUnitario.ToString("C")</MudTd>
                     <MudTd DataLabel="Total">@context.Total.ToString("C")</MudTd>
                     <MudTd>
@@ -157,7 +155,7 @@ else if (presupuesto is not null)
 
     <MudStack Row="true">
         <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Volver">Volver a la lista</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="DescargarPdf">Descargar PDF</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Href="@($"/presupuestos/{Id}/pdf")" Target="_blank">Descargar PDF</MudButton>
     </MudStack>
 }
 
@@ -192,14 +190,5 @@ else if (presupuesto is not null)
     private void Volver()
     {
         NavigationManager.NavigateTo("/presupuestos");
-    }
-
-    private async Task DescargarPdf()
-    {
-        var bytes = PdfService.GenerarPdf(presupuesto!);
-        using var stream = new MemoryStream(bytes);
-        using var streamRef = new DotNetStreamReference(stream);
-
-        await JS.InvokeVoidAsync("descargarArchivo", $"Presupuesto_{presupuesto!.NumeroCotizacion}.pdf", "application/pdf", streamRef);
     }
 }
