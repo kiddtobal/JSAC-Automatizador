@@ -190,7 +190,7 @@ namespace VidrieriaPresupuestos.Web.Services
                 foreach (var item in materiales)
                 {
                     table.Cell().Border(1).Padding(4).Text(item.Descripcion);
-                    table.Cell().Border(1).Padding(4).Text(item.Cantidad.ToString());
+                    table.Cell().Border(1).Padding(4).Text(item.Cantidad.ToString("0.####"));
                     table.Cell().Border(1).Padding(4).Text(item.Unidad);
                     table.Cell().Border(1).Padding(4).Text(item.ValorUnitario.ToString("C"));
                     table.Cell().Border(1).Padding(4).Text(item.Total.ToString("C"));
@@ -203,7 +203,7 @@ namespace VidrieriaPresupuestos.Web.Services
                     foreach (var item in manoDeObra)
                     {
                         table.Cell().Border(1).Padding(4).Text(item.Descripcion);
-                        table.Cell().Border(1).Padding(4).Text(item.Cantidad.ToString());
+                        table.Cell().Border(1).Padding(4).Text(item.Cantidad.ToString("0.####"));
                         table.Cell().Border(1).Padding(4).Text(item.Unidad);
                         table.Cell().Border(1).Padding(4).Text(item.ValorUnitario.ToString("C"));
                         table.Cell().Border(1).Padding(4).Text(item.Total.ToString("C"));

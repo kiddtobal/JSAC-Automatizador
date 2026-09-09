@@ -2,6 +2,7 @@
 @page "/presupuestos/{Id:int}/editar"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
+@using System.Text.Json
 @inject VidrieriaContext Context
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -114,7 +115,7 @@
                             <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
                         </MudItem>
                         <MudItem xs="6" sm="3" md="1">
-                            <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
+                            <MudNumericField T="decimal" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="0.0001m" Format="0.####" />
                         </MudItem>
                         <MudItem xs="6" sm="3" md="2">
                             <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
@@ -172,7 +173,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="6" sm="3">
-                    <MudNumericField T="int" @bind-Value="cantidadManoDeObra" Label="Cantidad" Immediate="true" Min="1" />
+                    <MudNumericField T="decimal" @bind-Value="cantidadManoDeObra" Label="Cantidad" Immediate="true" Min="0.0001m" Format="0.####" />
                 </MudItem>
                 <MudItem xs="6" sm="3">
                     <MudNumericField T="decimal" @bind-Value="valorUnitManoDeObra" Label="Valor Unit." Immediate="true" Min="0" Format="F0" />
@@ -207,7 +208,7 @@
                             <MudTextField @bind-Value="item.Unidad" Label="Unidad" Immediate="true" />
                         </MudItem>
                         <MudItem xs="6" sm="3" md="1">
-                            <MudNumericField T="int" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="1" />
+                            <MudNumericField T="decimal" @bind-Value="item.Cantidad" @bind-Value:after="() => RecalcularItem(item)" Label="Cantidad" Immediate="true" Min="0.0001m" Format="0.####" />
                         </MudItem>
                         <MudItem xs="6" sm="3" md="2">
                             <MudNumericField T="decimal" @bind-Value="item.PrecioBase" @bind-Value:after="() => RecalcularItem(item)" Label="Precio Base" Immediate="true" Min="0" Format="F0" />
@@ -309,7 +310,7 @@
 </MudPaper>
 
 <MudStack Row="true">
-    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" Disabled="@(!FormularioValido)" OnClick="GuardarPresupuesto">
+    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" Disabled="@(!FormularioValido || !HayCambiosPresupuesto())" OnClick="GuardarPresupuesto">
         @(Id.HasValue ? "Guardar Cambios" : "Guardar Presupuesto")
     </MudButton>
 </MudStack>
@@ -322,6 +323,18 @@
     private List<ItemPresupuesto> itemsOriginales = new();
     private List<CargoAdicional> cargosOriginales = new();
     private bool cargosPorDefectoCreados;
+
+    private int? snapshotClienteId;
+    private int? snapshotCotizadorId;
+    private string? snapshotNumeroCotizacion;
+    private DateTime snapshotFecha;
+    private string? snapshotReferencia;
+    private string? snapshotLocal;
+    private string? snapshotDireccionTrabajo;
+    private string? snapshotComuna;
+    private string? snapshotDescripcionTrabajo;
+    private string? snapshotNota;
+    private string? snapshotItemsCargosJson;
 
     private bool escuchandoDictado;
     private DotNetObjectReference<NuevoPresupuesto>? dotNetRefDictado;
@@ -350,7 +363,7 @@
 
     private ProductoPrecioReferencia? productoSeleccionadoMaterial;
     private string? tipoManoDeObra;
-    private int cantidadManoDeObra = 1;
+    private decimal cantidadManoDeObra = 1;
     private decimal valorUnitManoDeObra;
 
     private IEnumerable<ItemPresupuesto> ItemsMateriales => items.Where(i => i.Seccion == SeccionItem.Materiales);
@@ -483,7 +496,7 @@
         clienteSeleccionado = presupuestoExistente.Cliente;
         busquedaCliente = presupuestoExistente.Cliente.Nombre;
         numeroCotizacion = presupuestoExistente.NumeroCotizacion;
-        fecha = presupuestoExistente.Fecha;
+        fecha = DateTime.Today;
         cotizadorSeleccionado = presupuestoExistente.Cotizador;
         referencia = presupuestoExistente.Referencia;
         local = presupuestoExistente.Local;
@@ -497,6 +510,68 @@
         itemsOriginales = presupuestoExistente.Items.ToList();
         cargosOriginales = presupuestoExistente.CargosAdicionales.ToList();
         itemsExpandido = new();
+
+        snapshotClienteId = presupuestoExistente.ClienteId;
+        snapshotCotizadorId = presupuestoExistente.CotizadorId;
+        snapshotNumeroCotizacion = presupuestoExistente.NumeroCotizacion;
+        snapshotFecha = presupuestoExistente.Fecha;
+        snapshotReferencia = presupuestoExistente.Referencia;
+        snapshotLocal = presupuestoExistente.Local;
+        snapshotDireccionTrabajo = presupuestoExistente.DireccionTrabajo;
+        snapshotComuna = presupuestoExistente.Comuna;
+        snapshotDescripcionTrabajo = presupuestoExistente.DescripcionTrabajo;
+        snapshotNota = presupuestoExistente.Nota;
+        snapshotItemsCargosJson = SerializarItemsYCargos();
+    }
+
+    private string SerializarItemsYCargos()
+    {
+        var itemsProyectados = items.Select(i => new
+        {
+            i.Descripcion,
+            i.Categoria,
+            i.Origen,
+            i.Seccion,
+            i.Unidad,
+            i.UrlReferencia,
+            i.PrecioBase,
+            i.PorcentajeComision,
+            i.ValorUnitario,
+            i.Cantidad,
+            i.Total
+        });
+
+        var cargosProyectados = cargos.Select(c => new
+        {
+            c.Nombre,
+            c.TipoValor,
+            c.Valor,
+            c.MontoCalculado,
+            c.Cantidad,
+            c.Unidad,
+            c.CalcularSoloSobreInventario
+        });
+
+        return JsonSerializer.Serialize(new { Items = itemsProyectados, Cargos = cargosProyectados });
+    }
+
+    private bool HayCambiosPresupuesto()
+    {
+        if (!Id.HasValue)
+        {
+            return true;
+        }
+
+        return clienteSeleccionado?.Id != snapshotClienteId
+            || cotizadorSeleccionado?.Id != snapshotCotizadorId
+            || numeroCotizacion != snapshotNumeroCotizacion
+            || referencia != snapshotReferencia
+            || local != snapshotLocal
+            || direccionTrabajo != snapshotDireccionTrabajo
+            || comuna != snapshotComuna
+            || descripcionTrabajo != snapshotDescripcionTrabajo
+            || nota != snapshotNota
+            || SerializarItemsYCargos() != snapshotItemsCargosJson;
     }
 
     private List<Categoria> OrdenarCategoriasJerarquico(List<Categoria> todas) =>
@@ -638,7 +713,7 @@
     {
         item.PrecioBase = Math.Round(item.PrecioBase, 0, MidpointRounding.AwayFromZero);
         item.ValorUnitario = Math.Round(item.PrecioBase * (1 + item.PorcentajeComision / 100), 0, MidpointRounding.AwayFromZero);
-        item.Total = item.Cantidad * item.ValorUnitario;
+        item.Total = Math.Round(item.Cantidad * item.ValorUnitario, 0, MidpointRounding.AwayFromZero);
         RecalcularCargos();
     }
 
@@ -701,7 +776,7 @@
                 presupuestoExistente.ClienteId = clienteSeleccionado!.Id;
                 presupuestoExistente.Cliente = clienteSeleccionado;
                 presupuestoExistente.NumeroCotizacion = numeroCotizacion!;
-                presupuestoExistente.Fecha = fecha ?? DateTime.Today;
+                presupuestoExistente.Fecha = HayCambiosPresupuesto() ? (fecha ?? DateTime.Today) : snapshotFecha;
                 presupuestoExistente.CotizadorId = cotizadorSeleccionado!.Id;
                 presupuestoExistente.Cotizador = cotizadorSeleccionado;
                 presupuestoExistente.Referencia = referencia;

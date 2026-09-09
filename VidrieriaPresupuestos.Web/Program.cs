@@ -50,6 +50,24 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.MapGet("/presupuestos/{id:int}/pdf", async (int id, VidrieriaContext context, PresupuestoPdfService pdfService) =>
+{
+    var presupuesto = await context.Presupuestos
+        .Include(p => p.Cliente)
+        .Include(p => p.Cotizador)
+        .Include(p => p.Items)
+        .Include(p => p.CargosAdicionales)
+        .FirstOrDefaultAsync(p => p.Id == id);
+
+    if (presupuesto is null)
+    {
+        return Results.NotFound();
+    }
+
+    var bytes = pdfService.GenerarPdf(presupuesto);
+    return Results.File(bytes, "application/pdf", $"Presupuesto_{presupuesto.NumeroCotizacion}.pdf");
+});
+
 if (!WindowsServiceHelpers.IsWindowsService())
 {
     app.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStarted.Register(() =>
